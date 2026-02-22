@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BWS Empathy Annotation Study</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4F46E5',
+            'primary-dark': '#4338CA',
+            success: '#10B981',
+            warning: '#F59E0B',
+            surface: '#FFFFFF',
+            background: '#F8FAFC',
+            'text-primary': '#0F172A',
+            'text-secondary': '#475569',
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { font-size: 16px; background-color: #F8FAFC; color: #0F172A; }
+    :focus-visible { outline: 2px solid #4F46E5; outline-offset: 2px; }
+    .radio-option input[type="radio"]:focus-visible + span { outline: 2px solid #4F46E5; outline-offset: 2px; border-radius: 4px; }
+    .context-turn { white-space: pre-wrap; }
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: #F1F5F9; border-radius: 3px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+    @media (max-width: 768px) { .sidebar-desktop { display: none; } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useReducer, useEffect, useRef, useCallback } = React;
+
+    // ─── Utilities ────────────────────────────────────────────────────────────
+
+    function fisherYates(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function generateShuffleMaps(scenarios) {
+      const maps = {};
+      scenarios.forEach(s => {
+        maps[s.scenario_id] = fisherYates([0, 1, 2]);
+      });
+      return maps;
+    }
+
+    function isAnnotationComplete(ann) {
+      if (!ann) return false;
+      return (
+        ann.cognitiveMost && ann.cognitiveLeast &&
+        ann.affectiveMost && ann.affectiveLeast &&
+        ann.cognitiveMost !== ann.cognitiveLeast &&
+        ann.affectiveMost !== ann.affectiveLeast
+      );
+    }
+
+    function generateAnnotatorId() {
+      const num = Math.floor(Math.random() * 900) + 100;
+      return `ANNO_${String(num).padStart(3, '0')}`;
+    }
+
+    function escapeCSV(val) {
+      if (val === null || val === undefined) return '';
+      const str = String(val);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    }
+
+    function generateCSV(state) {
+      const { annotatorId, scenarios, shuffleMaps, annotations } = state;
+      const displayLabels = ['A', 'B', 'C'];
+      const header = [
+        'annotation_id','annotator_id','scenario_id','context_snippet',
+        'response_a_label','response_b_label','response_c_label',
+        'cognitive_most','cognitive_least','cognitive_reasoning',
+        'affective_most','affective_least','affective_reasoning',
+        'timestamp','session_duration_seconds'
+      ].join(',');
+
+      const rows = scenarios.map((scenario, idx) => {
+        const ann = annotations[scenario.scenario_id];
+        if (!ann) return null;
+        const map = shuffleMaps[scenario.scenario_id] || [0, 1, 2];
+        const scenarioNum = String(idx + 1).padStart(2, '0');
+        const annotationId = `${annotatorId}_S${scenarioNum}`;
+        const contextSnippet = scenario.context.substring(0, 100).replace(/\n/g, ' ');
+
+        // map[displayIndex] = originalIndex, originalIndex maps to response_id A/B/C
+        const originalIds = ['A', 'B', 'C'];
+        const aLabel = scenario.ground_truth_labels[originalIds[map[0]]] || '';
+        const bLabel = scenario.ground_truth_labels[originalIds[map[1]]] || '';
+        const cLabel = scenario.ground_truth_labels[originalIds[map[2]]] || '';
+
+        const duration = ann.endTime && ann.startTime
+          ? Math.round((ann.endTime - ann.startTime) / 1000)
+          : '';
+        const timestamp = ann.endTime ? new Date(ann.endTime).toISOString() : '';
+
+        return [
+          escapeCSV(annotationId),
+          escapeCSV(annotatorId),
+          escapeCSV(scenario.scenario_id),
+          escapeCSV(contextSnippet),
+          escapeCSV(aLabel),
+          escapeCSV(bLabel),
+          escapeCSV(cLabel),
+          escapeCSV(ann.cognitiveMost || ''),
+          escapeCSV(ann.cognitiveLeast || ''),
+          escapeCSV(ann.cognitiveReasoning || ''),
+          escapeCSV(ann.affectiveMost || ''),
+          escapeCSV(ann.affectiveLeast || ''),
+          escapeCSV(ann.affectiveReasoning || ''),
+          escapeCSV(timestamp),
+          escapeCSV(duration),
+        ].join(',');
+      }).filter(Boolean);
+
+      return [header, ...rows].join('\n');
+    }
+
+    function downloadFile(content, filename, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function saveToLocalStorage(state) {
+      if (!state.annotatorId) return;
+      const key = `bws_session_${state.annotatorId}`;
+      const saved = {
+        annotatorId: state.annotatorId,
+        annotations: state.annotations,
+        shuffleMaps: state.shuffleMaps,
+        currentScenarioIndex: state.currentScenarioIndex,
+        savedAt: Date.now(),
+      };
+      try { localStorage.setItem(key, JSON.stringify(saved)); } catch(e) {}
+    }
+
+    function loadFromLocalStorage(annotatorId) {
+      try {
+        const key = `bws_session_${annotatorId}`;
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+      } catch(e) { return null; }
+    }
+
+    function findExistingSessions() {
+      const sessions = [];
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('bws_session_')) {
+            const raw = localStorage.getItem(key);
+            if (raw) {
+              const data = JSON.parse(raw);
+              sessions.push(data);
+            }
+          }
+        }
+      } catch(e) {}
+      return sessions;
+    }
+
+    // ─── Server API ───────────────────────────────────────────────────────────
+
+    async function syncToServer(state) {
+      if (!state.annotatorId || !state.scenarios.length) return false;
+      try {
+        const res = await fetch('/api/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            annotator_id: state.annotatorId,
+            session_data: {
+              annotations: state.annotations,
+              shuffle_maps: state.shuffleMaps,
+              current_scenario_index: state.currentScenarioIndex,
+              saved_at: Date.now(),
+            },
+            scenarios: state.scenarios,
+          }),
+        });
+        return res.ok;
+      } catch {
+        return false;
+      }
+    }
+
+    async function loadSessionFromServer(annotatorId) {
+      try {
+        const res = await fetch(`/api/session/${encodeURIComponent(annotatorId)}`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (!data) return null;
+        return {
+          annotatorId,
+          annotations: data.annotations || {},
+          shuffleMaps: data.shuffle_maps || {},
+          currentScenarioIndex: data.current_scenario_index || 0,
+          savedAt: data.saved_at || null,
+        };
+      } catch {
+        return null;
+      }
+    }
+
+    // ─── Reducer ──────────────────────────────────────────────────────────────
+
+    const initialState = {
+      phase: 'welcome',
+      annotatorId: '',
+      scenarios: [],
+      shuffleMaps: {},
+      annotations: {},
+      currentScenarioIndex: 0,
+      lastSavedAt: null,
+    };
+
+    function reducer(state, action) {
+      switch (action.type) {
+        case 'START_SESSION': {
+          const { annotatorId, scenarios, existingSession } = action;
+          if (existingSession) {
+            return {
+              ...state,
+              phase: 'annotating',
+              annotatorId,
+              scenarios,
+              shuffleMaps: existingSession.shuffleMaps || generateShuffleMaps(scenarios),
+              annotations: existingSession.annotations || {},
+              currentScenarioIndex: existingSession.currentScenarioIndex || 0,
+              lastSavedAt: existingSession.savedAt || null,
+            };
+          }
+          return {
+            ...state,
+            phase: 'annotating',
+            annotatorId,
+            scenarios,
+            shuffleMaps: generateShuffleMaps(scenarios),
+            annotations: {},
+            currentScenarioIndex: 0,
+            lastSavedAt: null,
+          };
+        }
+        case 'NAVIGATE': {
+          const nextIndex = Math.max(0, Math.min(state.scenarios.length - 1, action.index));
+          const prevScenario = state.scenarios[state.currentScenarioIndex];
+          let newAnnotations = { ...state.annotations };
+          if (prevScenario) {
+            const prev = newAnnotations[prevScenario.scenario_id] || {};
+            if (prev.startTime) {
+              newAnnotations[prevScenario.scenario_id] = { ...prev, endTime: Date.now() };
+            }
+          }
+          const nextScenario = state.scenarios[nextIndex];
+          if (nextScenario) {
+            const cur = newAnnotations[nextScenario.scenario_id] || {};
+            if (!cur.startTime) {
+              newAnnotations[nextScenario.scenario_id] = { ...cur, startTime: Date.now() };
+            }
+          }
+          return { ...state, currentScenarioIndex: nextIndex, annotations: newAnnotations };
+        }
+        case 'UPDATE_ANNOTATION': {
+          const { scenarioId, field, value } = action;
+          const prev = state.annotations[scenarioId] || {};
+          const updated = { ...prev, [field]: value };
+          if (!updated.startTime) updated.startTime = Date.now();
+          return {
+            ...state,
+            annotations: { ...state.annotations, [scenarioId]: updated }
+          };
+        }
+        case 'MARK_SAVED': {
+          return { ...state, lastSavedAt: action.timestamp };
+        }
+        case 'COMPLETE': {
+          return { ...state, phase: 'complete' };
+        }
+        case 'RESET': {
+          return { ...initialState };
+        }
+        default:
+          return state;
+      }
+    }
+
+    // ─── Components ───────────────────────────────────────────────────────────
+
+    function ProgressBar({ current, total }) {
+      const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+      return (
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="text-sm font-medium text-slate-600 whitespace-nowrap">
+            {current} / {total} complete
+          </span>
+          <div className="flex-1 bg-slate-200 rounded-full h-2 min-w-[80px]">
+            <div
+              className="bg-indigo-600 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${pct}%` }}
+              role="progressbar"
+              aria-valuenow={pct}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            />
+          </div>
+          <span className="text-sm font-semibold text-indigo-600 whitespace-nowrap">{pct}%</span>
+        </div>
+      );
+    }
+
+    function ScenarioStatusBadge({ status }) {
+      if (status === 'complete') return (
+        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center" aria-label="Complete">
+          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </span>
+      );
+      if (status === 'partial') return (
+        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center" aria-label="In progress">
+          <span className="w-2 h-2 rounded-full bg-white" />
+        </span>
+      );
+      return (
+        <span className="flex-shrink-0 w-5 h-5 rounded-full border-2 border-slate-300 bg-white" aria-label="Not started" />
+      );
+    }
+
+    function RadioGroup({ name, options, value, onChange, error }) {
+      return (
+        <div
+          className={`flex flex-wrap gap-2 ${error ? 'p-2 rounded-lg border-2 border-red-400 bg-red-50' : ''}`}
+          role="radiogroup"
+        >
+          {options.map(opt => (
+            <label
+              key={opt.value}
+              className={`radio-option flex items-center gap-2 cursor-pointer px-4 py-2.5 rounded-lg border-2 transition-all select-none
+                ${value === opt.value
+                  ? 'border-indigo-600 bg-indigo-50 text-indigo-700 font-semibold'
+                  : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-indigo-50/40 text-slate-700'
+                }`}
+            >
+              <input
+                type="radio"
+                name={name}
+                value={opt.value}
+                checked={value === opt.value}
+                onChange={() => onChange(opt.value)}
+                className="sr-only"
+              />
+              <span
+                className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center
+                  ${value === opt.value ? 'border-indigo-600 bg-indigo-600' : 'border-slate-300 bg-white'}`}
+              >
+                {value === opt.value && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+              </span>
+              <span>{opt.label}</span>
+            </label>
+          ))}
+        </div>
+      );
+    }
+
+    function BWSquestion({ dimension, title, subtitle, mostLabel, leastLabel, mostValue, leastValue, reasoning, onMostChange, onLeastChange, onReasoningChange, displayLabels }) {
+      const sameError = mostValue && leastValue && mostValue === leastValue;
+      const radioOptions = displayLabels.map(l => ({ value: l, label: `Response ${l}` }));
+      const idPrefix = dimension;
+
+      return (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className={`px-5 py-3 ${dimension === 'cognitive' ? 'bg-indigo-600' : 'bg-violet-600'}`}>
+            <h3 className="text-base font-bold text-white">{title}</h3>
+            <p className="text-xs text-white/80 mt-0.5">{subtitle}</p>
+          </div>
+          <div className="p-5 space-y-5">
+            {sameError && (
+              <div
+                className="flex items-center gap-2 bg-red-50 border border-red-300 rounded-lg px-4 py-2.5 text-red-700 text-sm"
+                role="alert"
+                aria-live="polite"
+              >
+                <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                Please select different responses for MOST and LEAST
+              </div>
+            )}
+
+            <fieldset>
+              <legend className="text-sm font-semibold text-slate-700 mb-2">
+                Which response shows this <span className="text-emerald-600 uppercase">MOST</span>?
+              </legend>
+              <RadioGroup
+                name={`${idPrefix}-most`}
+                options={radioOptions}
+                value={mostValue}
+                onChange={onMostChange}
+                error={sameError}
+              />
+            </fieldset>
+
+            <fieldset>
+              <legend className="text-sm font-semibold text-slate-700 mb-2">
+                Which response shows this <span className="text-red-500 uppercase">LEAST</span>?
+              </legend>
+              <RadioGroup
+                name={`${idPrefix}-least`}
+                options={radioOptions}
+                value={leastValue}
+                onChange={onLeastChange}
+                error={sameError}
+              />
+            </fieldset>
+
+            <div>
+              <label htmlFor={`${idPrefix}-reasoning`} className="block text-sm font-medium text-slate-600 mb-1.5">
+                Why did you choose these? <span className="text-slate-400 font-normal">(optional)</span>
+              </label>
+              <textarea
+                id={`${idPrefix}-reasoning`}
+                rows={2}
+                value={reasoning}
+                onChange={e => onReasoningChange(e.target.value)}
+                placeholder="Share your reasoning..."
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none"
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function ContextDisplay({ context }) {
+      const lines = context.split('\n').filter(l => l.trim());
+      return (
+        <div className="bg-slate-50 rounded-xl border border-slate-200 max-h-52 overflow-y-auto scrollbar-thin p-4 space-y-2">
+          {lines.map((line, i) => {
+            const isTherapist = line.startsWith('Therapist:');
+            const isClient = line.startsWith('Client:');
+            if (isTherapist) {
+              const [speaker, ...rest] = line.split(':');
+              return (
+                <p key={i} className="context-turn text-sm">
+                  <span className="font-bold text-indigo-700">{speaker}:</span>
+                  <span className="text-slate-700">{':' + rest.join(':')}</span>
+                </p>
+              );
+            } else if (isClient) {
+              const [speaker, ...rest] = line.split(':');
+              return (
+                <p key={i} className="context-turn text-sm">
+                  <span className="font-bold text-violet-700">{speaker}:</span>
+                  <span className="text-slate-700">{':' + rest.join(':')}</span>
+                </p>
+              );
+            }
+            return <p key={i} className="context-turn text-sm text-slate-600">{line}</p>;
+          })}
+        </div>
+      );
+    }
+
+    function ResponseCard({ label, text }) {
+      const colors = {
+        A: 'border-blue-200 bg-blue-50/30',
+        B: 'border-purple-200 bg-purple-50/30',
+        C: 'border-teal-200 bg-teal-50/30',
+      };
+      const badgeColors = {
+        A: 'bg-blue-600 text-white',
+        B: 'bg-purple-600 text-white',
+        C: 'bg-teal-600 text-white',
+      };
+      return (
+        <div className={`rounded-xl border-2 p-4 ${colors[label] || 'border-slate-200 bg-white'}`}>
+          <div className="flex items-start gap-3">
+            <span className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${badgeColors[label] || 'bg-slate-600 text-white'}`}>
+              {label}
+            </span>
+            <p className="text-sm text-slate-700 leading-relaxed">{text}</p>
+          </div>
+        </div>
+      );
+    }
+
+    function ScenarioPanel({ state, dispatch }) {
+      const { scenarios, currentScenarioIndex, annotations, shuffleMaps } = state;
+      const scenario = scenarios[currentScenarioIndex];
+      if (!scenario) return null;
+
+      const ann = annotations[scenario.scenario_id] || {};
+      const map = shuffleMaps[scenario.scenario_id] || [0, 1, 2];
+      const displayLabels = ['A', 'B', 'C'];
+
+      // Build display responses using shuffle map
+      const displayResponses = map.map((originalIdx, displayIdx) => ({
+        displayLabel: displayLabels[displayIdx],
+        text: scenario.responses[originalIdx].text,
+      }));
+
+      const isComplete = isAnnotationComplete(ann);
+      const isFirst = currentScenarioIndex === 0;
+      const isLast = currentScenarioIndex === scenarios.length - 1;
+
+      function updateField(field) {
+        return val => dispatch({ type: 'UPDATE_ANNOTATION', scenarioId: scenario.scenario_id, field, value: val });
+      }
+
+      function handleNavigate(newIndex) {
+        // Record endTime for current
+        const cur = annotations[scenario.scenario_id] || {};
+        if (cur.startTime) {
+          dispatch({ type: 'UPDATE_ANNOTATION', scenarioId: scenario.scenario_id, field: 'endTime', value: Date.now() });
+        }
+        dispatch({ type: 'NAVIGATE', index: newIndex });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      return (
+        <div className="space-y-6">
+          {/* Scenario header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="inline-block bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                {scenario.scenario_id.replace('_', ' ')}
+              </span>
+            </div>
+            {isComplete && (
+              <span className="flex items-center gap-1.5 text-emerald-600 text-sm font-semibold">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                Annotation complete
+              </span>
+            )}
+          </div>
+
+          {/* Context */}
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Therapy Context</h2>
+            <ContextDisplay context={scenario.context} />
+          </div>
+
+          {/* Responses */}
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">Response Options</h2>
+            <div className="space-y-3">
+              {displayResponses.map(r => (
+                <ResponseCard key={r.displayLabel} label={r.displayLabel} text={r.text} />
+              ))}
+            </div>
+          </div>
+
+          {/* BWS Questions */}
+          <div className="space-y-4">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500">Annotation Questions</h2>
+            <BWSquestion
+              dimension="cognitive"
+              title="Question 1: Cognitive Empathy"
+              subtitle="Understanding the client's perspective and situation"
+              mostLabel="MOST cognitive empathy"
+              leastLabel="LEAST cognitive empathy"
+              mostValue={ann.cognitiveMost || ''}
+              leastValue={ann.cognitiveLeast || ''}
+              reasoning={ann.cognitiveReasoning || ''}
+              onMostChange={updateField('cognitiveMost')}
+              onLeastChange={updateField('cognitiveLeast')}
+              onReasoningChange={updateField('cognitiveReasoning')}
+              displayLabels={displayLabels}
+            />
+            <BWSquestion
+              dimension="affective"
+              title="Question 2: Affective Empathy"
+              subtitle="Validating the client's emotional experience"
+              mostLabel="MOST affective empathy"
+              leastLabel="LEAST affective empathy"
+              mostValue={ann.affectiveMost || ''}
+              leastValue={ann.affectiveLeast || ''}
+              reasoning={ann.affectiveReasoning || ''}
+              onMostChange={updateField('affectiveMost')}
+              onLeastChange={updateField('affectiveLeast')}
+              onReasoningChange={updateField('affectiveReasoning')}
+              displayLabels={displayLabels}
+            />
+          </div>
+
+          {/* Navigation */}
+          <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+            <button
+              onClick={() => handleNavigate(currentScenarioIndex - 1)}
+              disabled={isFirst}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-slate-200 bg-white text-slate-600 font-medium text-sm hover:border-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              Previous
+            </button>
+            <span className="text-sm text-slate-500 font-medium">
+              Scenario {currentScenarioIndex + 1} of {scenarios.length}
+            </span>
+            {isLast ? (
+              <FinishButton state={state} dispatch={dispatch} />
+            ) : (
+              <button
+                onClick={() => handleNavigate(currentScenarioIndex + 1)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-600 text-white font-medium text-sm hover:bg-indigo-700 transition-all shadow-sm"
+              >
+                Next
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    function FinishButton({ state, dispatch }) {
+      const [showModal, setShowModal] = useState(false);
+      const { scenarios, annotations } = state;
+
+      const incomplete = scenarios.filter(s => !isAnnotationComplete(annotations[s.scenario_id]));
+      const completedCount = scenarios.length - incomplete.length;
+
+      function handleFinish() {
+        if (incomplete.length > 0) {
+          setShowModal(true);
+        } else {
+          dispatch({ type: 'COMPLETE' });
+        }
+      }
+
+      return (
+        <>
+          <button
+            onClick={handleFinish}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 text-white font-medium text-sm hover:bg-emerald-700 transition-all shadow-sm"
+          >
+            Finish &amp; Export
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </button>
+
+          {showModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true">
+              <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-800">Incomplete Annotations</h3>
+                </div>
+                <p className="text-sm text-slate-600">
+                  You have completed <strong>{completedCount} of {scenarios.length}</strong> scenarios. The following scenarios are incomplete:
+                </p>
+                <ul className="space-y-1 max-h-48 overflow-y-auto">
+                  {incomplete.map(s => (
+                    <li key={s.scenario_id} className="flex items-center gap-2 text-sm text-slate-700">
+                      <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />
+                      {s.scenario_id.replace('_', ' ')}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-sm text-slate-500">Only completed annotations will be exported to CSV.</p>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className="flex-1 px-4 py-2.5 rounded-lg border-2 border-slate-200 text-slate-700 font-medium text-sm hover:bg-slate-50 transition-all"
+                  >
+                    Go Back
+                  </button>
+                  <button
+                    onClick={() => { setShowModal(false); dispatch({ type: 'COMPLETE' }); }}
+                    className="flex-1 px-4 py-2.5 rounded-lg bg-emerald-600 text-white font-medium text-sm hover:bg-emerald-700 transition-all"
+                  >
+                    Export Anyway
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      );
+    }
+
+    function Sidebar({ state, dispatch }) {
+      const { scenarios, annotations, currentScenarioIndex } = state;
+
+      function getStatus(scenarioId) {
+        const ann = annotations[scenarioId];
+        if (!ann) return 'none';
+        if (isAnnotationComplete(ann)) return 'complete';
+        if (ann.cognitiveMost || ann.cognitiveLeast || ann.affectiveMost || ann.affectiveLeast) return 'partial';
+        return 'none';
+      }
+
+      const completedCount = scenarios.filter(s => isAnnotationComplete(annotations[s.scenario_id])).length;
+
+      return (
+        <aside className="w-56 flex-shrink-0 flex flex-col bg-white border-r border-slate-200 overflow-hidden">
+          <div className="p-4 border-b border-slate-200">
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Scenarios</p>
+            <ProgressBar current={completedCount} total={scenarios.length} />
+          </div>
+          <nav className="flex-1 overflow-y-auto scrollbar-thin py-2" aria-label="Scenario list">
+            {scenarios.map((s, idx) => {
+              const status = getStatus(s.scenario_id);
+              const isCurrent = idx === currentScenarioIndex;
+              return (
+                <button
+                  key={s.scenario_id}
+                  onClick={() => dispatch({ type: 'NAVIGATE', index: idx })}
+                  className={`w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm transition-colors
+                    ${isCurrent
+                      ? 'bg-indigo-50 text-indigo-700 font-semibold border-r-2 border-indigo-600'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
+                    }`}
+                  aria-current={isCurrent ? 'page' : undefined}
+                >
+                  <ScenarioStatusBadge status={status} />
+                  <span className="truncate">{s.scenario_id.replace('_', ' ')}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
+      );
+    }
+
+    function Header({ state, dispatch, lastSavedAt, serverStatus, onSaveNow }) {
+      const completedCount = state.scenarios.filter(s => isAnnotationComplete(state.annotations[s.scenario_id])).length;
+
+      function handleDownloadCSV() {
+        const csv = generateCSV(state);
+        const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        downloadFile(csv, `annotations_${state.annotatorId}_${ts}.csv`, 'text/csv;charset=utf-8;');
+      }
+
+      const savedLabel = lastSavedAt
+        ? `Saved ${new Date(lastSavedAt).toLocaleTimeString()}`
+        : 'Not saved yet';
+
+      return (
+        <header className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-sm font-bold text-slate-800 truncate">BWS Empathy Annotation</h1>
+              <p className="text-xs text-slate-500">ID: <span className="font-mono font-semibold text-indigo-600">{state.annotatorId}</span></p>
+            </div>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-3 text-xs">
+            <span className="flex items-center gap-1.5 text-slate-400">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+              </svg>
+              {savedLabel}
+            </span>
+            {serverStatus === 'synced' && (
+              <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Server synced
+              </span>
+            )}
+            {serverStatus === 'syncing' && (
+              <span className="flex items-center gap-1 text-indigo-500 font-medium">
+                <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Syncing…
+              </span>
+            )}
+            {serverStatus === 'offline' && (
+              <span className="flex items-center gap-1 text-amber-500 font-medium" title="Server not reachable — data saved locally">
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                Local only
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onSaveNow}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 text-xs font-medium hover:bg-slate-50 transition-all"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+              </svg>
+              Save
+            </button>
+            <button
+              onClick={handleDownloadCSV}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition-all"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              CSV
+            </button>
+          </div>
+        </header>
+      );
+    }
+
+    function AnnotationView({ state, dispatch }) {
+      const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+      const [lastSavedAt, setLastSavedAt] = useState(state.lastSavedAt);
+      const [serverStatus, setServerStatus] = useState('idle'); // 'idle' | 'syncing' | 'synced' | 'offline'
+      // Keep a ref to always have current state in callbacks without re-creating intervals
+      const stateRef = useRef(state);
+      useEffect(() => { stateRef.current = state; }, [state]);
+
+      async function doServerSync() {
+        setServerStatus('syncing');
+        const ok = await syncToServer(stateRef.current);
+        setServerStatus(ok ? 'synced' : 'offline');
+      }
+
+      function handleSaveNow() {
+        saveToLocalStorage(stateRef.current);
+        dispatch({ type: 'MARK_SAVED', timestamp: Date.now() });
+        setLastSavedAt(Date.now());
+        doServerSync();
+      }
+
+      // Auto-save every 30 seconds (stable interval — uses stateRef)
+      useEffect(() => {
+        const interval = setInterval(() => {
+          saveToLocalStorage(stateRef.current);
+          const now = Date.now();
+          dispatch({ type: 'MARK_SAVED', timestamp: now });
+          setLastSavedAt(now);
+          doServerSync();
+        }, 30000);
+        return () => clearInterval(interval);
+      }, []);
+
+      // Save to localStorage + debounce server sync on every annotation change
+      useEffect(() => {
+        if (!state.annotatorId) return;
+        saveToLocalStorage(state);
+        setLastSavedAt(Date.now());
+        const t = setTimeout(doServerSync, 1500);
+        return () => clearTimeout(t);
+      }, [state.annotations]);
+
+      // Record startTime for initial scenario
+      useEffect(() => {
+        const scenario = state.scenarios[state.currentScenarioIndex];
+        if (!scenario) return;
+        const ann = state.annotations[scenario.scenario_id] || {};
+        if (!ann.startTime) {
+          dispatch({ type: 'UPDATE_ANNOTATION', scenarioId: scenario.scenario_id, field: 'startTime', value: Date.now() });
+        }
+      }, [state.currentScenarioIndex]);
+
+      return (
+        <div className="flex flex-col h-screen overflow-hidden">
+          <Header state={state} dispatch={dispatch} lastSavedAt={lastSavedAt} serverStatus={serverStatus} onSaveNow={handleSaveNow} />
+          <div className="flex flex-1 overflow-hidden">
+            {/* Desktop sidebar */}
+            <div className="sidebar-desktop hidden md:flex">
+              <Sidebar state={state} dispatch={dispatch} />
+            </div>
+
+            {/* Mobile sidebar overlay */}
+            {showMobileSidebar && (
+              <div className="fixed inset-0 z-40 flex md:hidden" role="dialog" aria-modal="true">
+                <div className="absolute inset-0 bg-black/40" onClick={() => setShowMobileSidebar(false)} />
+                <div className="relative z-50 w-64 bg-white h-full shadow-2xl">
+                  <div className="flex items-center justify-between p-4 border-b border-slate-200">
+                    <span className="font-bold text-slate-800">Scenarios</span>
+                    <button onClick={() => setShowMobileSidebar(false)} className="p-1 rounded-lg hover:bg-slate-100" aria-label="Close sidebar">
+                      <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <Sidebar state={state} dispatch={dispatch} />
+                </div>
+              </div>
+            )}
+
+            {/* Main content */}
+            <main className="flex-1 overflow-y-auto scrollbar-thin">
+              {/* Mobile header bar */}
+              <div className="md:hidden flex items-center justify-between bg-white border-b border-slate-200 px-4 py-2.5">
+                <button
+                  onClick={() => setShowMobileSidebar(true)}
+                  className="flex items-center gap-2 text-sm text-slate-600 font-medium"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                  All Scenarios
+                </button>
+                <span className="text-sm text-slate-500 font-medium">
+                  {state.currentScenarioIndex + 1} / {state.scenarios.length}
+                </span>
+              </div>
+              <div className="max-w-3xl mx-auto px-4 py-6">
+                <ScenarioPanel state={state} dispatch={dispatch} />
+              </div>
+            </main>
+          </div>
+        </div>
+      );
+    }
+
+    function WelcomeScreen({ dispatch }) {
+      const [annotatorId, setAnnotatorId] = useState('');
+      const [scenarios, setScenarios] = useState(null);
+      const [loadError, setLoadError] = useState('');
+      const [existingSessions, setExistingSessions] = useState([]);
+      const [loadingAuto, setLoadingAuto] = useState(true);
+      const [selectedResume, setSelectedResume] = useState(null);
+      const [starting, setStarting] = useState(false);
+      const fileInputRef = useRef(null);
+
+      useEffect(() => {
+        const sessions = findExistingSessions();
+        setExistingSessions(sessions);
+
+        // Try to auto-load scenarios.json
+        fetch('scenarios.json')
+          .then(r => { if (!r.ok) throw new Error('Not found'); return r.json(); })
+          .then(data => { setScenarios(data); setLoadingAuto(false); })
+          .catch(() => setLoadingAuto(false));
+      }, []);
+
+      function handleFileUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+          try {
+            const data = JSON.parse(ev.target.result);
+            if (!data.scenarios || !Array.isArray(data.scenarios)) throw new Error('Invalid format');
+            setScenarios(data);
+            setLoadError('');
+          } catch {
+            setLoadError('Invalid JSON file. Please select a valid scenarios.json file.');
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      async function handleStart(resumeSession) {
+        const id = annotatorId.trim() || generateAnnotatorId();
+        if (!scenarios) { setLoadError('Please load a scenarios.json file first.'); return; }
+        setStarting(true);
+        let existingSession = resumeSession || loadFromLocalStorage(id);
+        // Check server for a newer session (falls back gracefully if server is offline)
+        const serverSession = await loadSessionFromServer(id);
+        if (serverSession && serverSession.savedAt) {
+          const localSavedAt = existingSession?.savedAt || 0;
+          if (serverSession.savedAt > localSavedAt) {
+            existingSession = serverSession;
+          }
+        }
+        dispatch({
+          type: 'START_SESSION',
+          annotatorId: id,
+          scenarios: scenarios.scenarios,
+          existingSession,
+        });
+      }
+
+      function handleResumeSession(session) {
+        setAnnotatorId(session.annotatorId);
+        setSelectedResume(session);
+      }
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-violet-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-lg">
+            {/* Logo/Title */}
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-600 shadow-lg mb-4">
+                <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+              </div>
+              <h1 className="text-2xl font-bold text-slate-800">BWS Empathy Annotation</h1>
+              <p className="text-slate-500 mt-1.5 text-sm">Best-Worst Scaling Study on Therapeutic Dialogue</p>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-6 space-y-6">
+              {/* Resume existing sessions */}
+              {existingSessions.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3">Resume Session</p>
+                  <div className="space-y-2">
+                    {existingSessions.map(session => {
+                      const completedCount = Object.values(session.annotations || {}).filter(a => isAnnotationComplete(a)).length;
+                      return (
+                        <button
+                          key={session.annotatorId}
+                          onClick={() => handleResumeSession(session)}
+                          className={`w-full text-left flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-all
+                            ${selectedResume?.annotatorId === session.annotatorId
+                              ? 'border-indigo-500 bg-indigo-50'
+                              : 'border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/40'
+                            }`}
+                        >
+                          <div>
+                            <p className="font-semibold text-sm text-slate-800 font-mono">{session.annotatorId}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              {completedCount} scenario{completedCount !== 1 ? 's' : ''} completed
+                              {session.savedAt ? ` · Saved ${new Date(session.savedAt).toLocaleString()}` : ''}
+                            </p>
+                          </div>
+                          {selectedResume?.annotatorId === session.annotatorId && (
+                            <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="relative my-4">
+                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200" /></div>
+                    <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-slate-400">or start new</span></div>
+                  </div>
+                </div>
+              )}
+
+              {/* Annotator ID */}
+              <div>
+                <label htmlFor="annotator-id" className="block text-sm font-semibold text-slate-700 mb-1.5">
+                  Annotator ID
+                </label>
+                <input
+                  id="annotator-id"
+                  type="text"
+                  value={annotatorId}
+                  onChange={e => { setAnnotatorId(e.target.value); setSelectedResume(null); }}
+                  placeholder="e.g., ANNO_001 (leave blank to auto-generate)"
+                  className="w-full rounded-xl border-2 border-slate-200 px-4 py-2.5 text-sm font-mono text-slate-700 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                />
+              </div>
+
+              {/* Load scenarios */}
+              <div>
+                <p className="text-sm font-semibold text-slate-700 mb-2">Scenarios Data</p>
+                {loadingAuto ? (
+                  <div className="flex items-center gap-2 text-sm text-slate-500 py-2">
+                    <svg className="w-4 h-4 animate-spin text-indigo-500" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Loading scenarios.json…
+                  </div>
+                ) : scenarios ? (
+                  <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2.5">
+                    <svg className="w-4 h-4 text-emerald-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <div>
+                      <p className="text-sm font-semibold text-emerald-700">Loaded successfully</p>
+                      <p className="text-xs text-emerald-600">{scenarios.scenarios.length} scenario{scenarios.scenarios.length !== 1 ? 's' : ''} ready</p>
+                    </div>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="ml-auto text-xs text-emerald-600 underline hover:text-emerald-700"
+                    >
+                      Replace
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 text-amber-700 text-sm">
+                      <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      Could not auto-load scenarios.json. Please upload it manually.
+                    </div>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/40 text-slate-600 text-sm font-medium transition-all"
+                    >
+                      <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      Upload scenarios.json
+                    </button>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json,application/json"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  aria-label="Upload scenarios JSON file"
+                />
+                {loadError && (
+                  <p className="mt-2 text-sm text-red-600" role="alert">{loadError}</p>
+                )}
+              </div>
+
+              {/* Start / Resume button */}
+              <button
+                onClick={() => handleStart(selectedResume)}
+                disabled={!scenarios || starting}
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold text-base hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
+              >
+                {starting ? (
+                  <>
+                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Loading…
+                  </>
+                ) : selectedResume ? (
+                  <>
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Resume Session
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Start Annotation
+                  </>
+                )}
+              </button>
+
+              {/* Instructions */}
+              <details className="text-sm text-slate-500 group">
+                <summary className="cursor-pointer font-medium text-slate-600 hover:text-slate-800 list-none flex items-center gap-1">
+                  <svg className="w-4 h-4 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                  Instructions
+                </summary>
+                <div className="mt-3 space-y-2 pl-5">
+                  <p>For each scenario you will see a therapy dialogue followed by three anonymous responses (A, B, C).</p>
+                  <p>You will answer <strong>two questions</strong> about each set of responses:</p>
+                  <ol className="list-decimal list-inside space-y-1 pl-2">
+                    <li><strong>Cognitive Empathy</strong> — which response best/least shows understanding of the client's perspective</li>
+                    <li><strong>Affective Empathy</strong> — which response best/least validates the client's emotional experience</li>
+                  </ol>
+                  <p>Your progress is saved automatically. You can close and resume at any time.</p>
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function CompletionScreen({ state, dispatch }) {
+      const { scenarios, annotations, annotatorId } = state;
+      const completedCount = scenarios.filter(s => isAnnotationComplete(annotations[s.scenario_id])).length;
+      const totalTime = Object.values(annotations).reduce((sum, ann) => {
+        if (ann.startTime && ann.endTime) return sum + Math.round((ann.endTime - ann.startTime) / 1000);
+        return sum;
+      }, 0);
+      const mins = Math.floor(totalTime / 60);
+      const secs = totalTime % 60;
+
+      function handleDownloadCSV() {
+        const csv = generateCSV(state);
+        const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        downloadFile(csv, `annotations_${annotatorId}_${ts}.csv`, 'text/csv;charset=utf-8;');
+      }
+
+      function handleDownloadJSON() {
+        const data = {
+          annotatorId,
+          exportTimestamp: new Date().toISOString(),
+          annotations,
+          shuffleMaps: state.shuffleMaps,
+        };
+        const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        downloadFile(JSON.stringify(data, null, 2), `annotations_${annotatorId}_${ts}.json`, 'application/json');
+      }
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-indigo-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500 shadow-lg mb-4">
+                <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h1 className="text-2xl font-bold text-slate-800">Annotation Complete!</h1>
+              <p className="text-slate-500 mt-1.5 text-sm">Thank you for your contribution to this research study</p>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-6 space-y-6">
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="bg-indigo-50 rounded-xl p-3">
+                  <p className="text-2xl font-bold text-indigo-700">{completedCount}</p>
+                  <p className="text-xs text-indigo-500 mt-0.5">Completed</p>
+                </div>
+                <div className="bg-slate-50 rounded-xl p-3">
+                  <p className="text-2xl font-bold text-slate-700">{scenarios.length}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Total</p>
+                </div>
+                <div className="bg-emerald-50 rounded-xl p-3">
+                  <p className="text-2xl font-bold text-emerald-700">{mins}m {secs}s</p>
+                  <p className="text-xs text-emerald-500 mt-0.5">Time spent</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  onClick={handleDownloadCSV}
+                  className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-all shadow-md"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download My Annotations (CSV)
+                </button>
+                <a
+                  href={`/api/export/csv/${encodeURIComponent(annotatorId)}`}
+                  className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-emerald-300 bg-emerald-50 text-emerald-700 font-semibold hover:bg-emerald-100 transition-all"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                  Download from Server (CSV)
+                </a>
+                <button
+                  onClick={handleDownloadJSON}
+                  className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-all"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download Archive (JSON)
+                </button>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => dispatch({ type: 'NAVIGATE', index: 0 }) || dispatch({ type: 'START_SESSION', annotatorId: state.annotatorId, scenarios: state.scenarios, existingSession: { annotations: state.annotations, shuffleMaps: state.shuffleMaps, currentScenarioIndex: 0 } })}
+                  className="flex-1 px-4 py-2.5 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-all"
+                >
+                  Review Annotations
+                </button>
+                <button
+                  onClick={() => dispatch({ type: 'RESET' })}
+                  className="flex-1 px-4 py-2.5 rounded-xl border-2 border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-all"
+                >
+                  New Session
+                </button>
+              </div>
+
+              <p className="text-xs text-slate-400 text-center">
+                Your annotations are saved in the server database and locally in this browser.<br />
+                The researcher can collect all data at{' '}
+                <a href="/admin" className="text-indigo-400 hover:underline font-mono">/admin</a>.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ─── App Root ─────────────────────────────────────────────────────────────
+
+    function App() {
+      const [state, dispatch] = useReducer(reducer, initialState);
+
+      switch (state.phase) {
+        case 'welcome':
+          return <WelcomeScreen dispatch={dispatch} />;
+        case 'annotating':
+          return <AnnotationView state={state} dispatch={dispatch} />;
+        case 'complete':
+          return <CompletionScreen state={state} dispatch={dispatch} />;
+        default:
+          return <WelcomeScreen dispatch={dispatch} />;
+      }
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

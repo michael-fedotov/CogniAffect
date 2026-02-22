@@ -1,0 +1,17 @@
+[project]
+name = "bws-annotation"
+version = "0.1.0"
+description = "BWS Empathy Annotation Tool — Best-Worst Scaling study on cognitive and affective empathy in therapeutic dialogue"
+authors = []
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "flask>=3.0.0",
+]
+
+[tool.poetry]
+package-mode = false
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

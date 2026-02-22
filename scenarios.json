@@ -1,0 +1,75 @@
+{
+  "annotator_id": null,
+  "import_timestamp": "2024-02-22T10:30:00Z",
+  "scenarios": [
+    {
+      "scenario_id": "SCENARIO_01",
+      "context": "Therapist: How are you feeling today?\n\nClient: Honestly, I'm struggling. I've been trying so hard at work, putting in extra hours, but my boss keeps criticizing my output. I feel like nothing I do is good enough.\n\nTherapist: That sounds really challenging.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "That sounds incredibly frustrating. You're putting in the effort and it's clearly important to you, but it's not being recognized. That's demoralizing. Can you tell me more about what specific feedback your boss is giving? Sometimes understanding the gap between their expectations and what you're delivering can help us figure out next steps."
+        },
+        {
+          "response_id": "B",
+          "text": "It sounds like you're experiencing a discrepancy between your effort and perceived results. This situation creates cognitive dissonance: you invest resources but receive negative feedback, which contradicts your self-estimate. The issue may involve: (1) unrealistic expectations, (2) feedback delivery problems, or (3) actual skill gaps. Which factor dominates?"
+        },
+        {
+          "response_id": "C",
+          "text": "Oh wow, that must feel SO discouraging! 😟 You're working SO hard and giving it your all, but instead of appreciation, you're getting criticism. I can absolutely understand why you're doubting yourself—that would shake anyone's confidence! You deserve to feel valued for your efforts. This is really tough, and I'm so sorry you're going through this."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_02",
+      "context": "Client: I've been having panic attacks lately and I don't know why they're happening. It's affecting my sleep and my relationships.\n\nTherapist: Panic attacks can be really frightening. Tell me more about what you experience during them.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "That sounds terrifying. When panic attacks hit, the physical symptoms—racing heart, difficulty breathing—can feel life-threatening even though they're not dangerous. Many people find relief through understanding the panic cycle. Have you noticed any patterns before attacks start?"
+        },
+        {
+          "response_id": "B",
+          "text": "Panic attacks involve the amygdala triggering a threat response to internal bodily cues. Your sympathetic nervous system floods with cortisol and adrenaline, creating the sensation of danger despite absence of actual threat. This feedback loop: worry → symptoms → more worry, perpetuates the cycle. Breaking it requires: psychoeducation, breathing techniques, and graduated exposure."
+        },
+        {
+          "response_id": "C",
+          "text": "I can hear how much these attacks are affecting you—that must be SO scary! 💙 The fact that they're impacting your sleep and relationships shows how overwhelming this is. But I want you to know you're not alone, and we can work through this together. These feelings are valid, and I'm here to support you every step of the way."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_03",
+      "context": "Therapist: How's your week been?\n\nClient: Not great. I feel like I'm a burden to everyone around me. My family would be better off without me.\n\nTherapist: I'm glad you shared that with me. Can you help me understand what's making you feel this way?",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "When we're struggling, our mind often tells us stories that aren't true—that we're burdens, that we'd be better gone. These thoughts are part of depression, not reality. You matter to the people in your life. I'd like to explore what's been happening that led to these thoughts, and we can work on shifting this perspective together."
+        },
+        {
+          "response_id": "B",
+          "text": "Catastrophic thinking and negative self-evaluation are cognitive distortions associated with depressive disorders. The belief that others would benefit from your absence represents emotional reasoning—treating thoughts as facts. Evidence-based interventions include cognitive restructuring, behavioral activation, and safety planning. What evidence supports or contradicts your belief?"
+        },
+        {
+          "response_id": "C",
+          "text": "I hear so much pain in what you're saying, and I'm really concerned about you. 💛 Those thoughts—that you're a burden—they're so heavy to carry alone. But please know that you're valued and important, and what you're feeling right now doesn't define your worth. Let's talk about what's happened and how we can get you support. I'm here for you."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    }
+  ]
+}
