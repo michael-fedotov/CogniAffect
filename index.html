@@ -47,6 +47,12 @@
   <script type="text/babel">
     const { useState, useReducer, useEffect, useRef, useCallback } = React;
 
+    // ─── API config (Render backend when frontend is on GitHub Pages) ─────────
+    const API_BASE = typeof window !== 'undefined' && window.location.hostname === 'michael-fedotov.github.io'
+      ? 'https://cogniaffect.onrender.com'
+      : '';
+    function apiUrl(path) { return path.startsWith('http') ? path : `${API_BASE}${path}`; }
+
     // ─── Utilities ────────────────────────────────────────────────────────────
 
     function fisherYates(arr) {
@@ -192,10 +198,33 @@
 
     // ─── Server API ───────────────────────────────────────────────────────────
 
-    async function syncToServer(state) {
+    const WAKEUP_DELAY_MS = 3000;
+    const RETRY_AFTER_502_MS = 8000;
+
+    async function fetchWithWakeup(url, options = {}, { onWakingUp } = {}) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        onWakingUp?.();
+      }, WAKEUP_DELAY_MS);
+      try {
+        let res = await fetch(apiUrl(url), { ...options, signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (res.status === 502 && onWakingUp) {
+          onWakingUp();
+          await new Promise(r => setTimeout(r, RETRY_AFTER_502_MS));
+          res = await fetch(apiUrl(url), options);
+        }
+        return res;
+      } catch (err) {
+        clearTimeout(timeoutId);
+        throw err;
+      }
+    }
+
+    async function syncToServer(state, { onWakingUp } = {}) {
       if (!state.annotatorId || !state.scenarios.length) return false;
       try {
-        const res = await fetch('/api/sync', {
+        const res = await fetchWithWakeup('/api/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -208,16 +237,16 @@
             },
             scenarios: state.scenarios,
           }),
-        });
+        }, { onWakingUp });
         return res.ok;
       } catch {
         return false;
       }
     }
 
-    async function loadSessionFromServer(annotatorId) {
+    async function loadSessionFromServer(annotatorId, { onWakingUp } = {}) {
       try {
-        const res = await fetch(`/api/session/${encodeURIComponent(annotatorId)}`);
+        const res = await fetchWithWakeup(`/api/session/${encodeURIComponent(annotatorId)}`, {}, { onWakingUp });
         if (!res.ok) return null;
         const data = await res.json();
         if (!data) return null;
@@ -817,6 +846,15 @@
                 Syncing…
               </span>
             )}
+            {serverStatus === 'waking' && (
+              <span className="flex items-center gap-1 text-amber-600 font-medium" title="Server is waking up (Render free tier). This may take 30–60 seconds.">
+                <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Waking up server…
+              </span>
+            )}
             {serverStatus === 'offline' && (
               <span className="flex items-center gap-1 text-amber-500 font-medium" title="Server not reachable — data saved locally">
                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -854,14 +892,16 @@
     function AnnotationView({ state, dispatch }) {
       const [showMobileSidebar, setShowMobileSidebar] = useState(false);
       const [lastSavedAt, setLastSavedAt] = useState(state.lastSavedAt);
-      const [serverStatus, setServerStatus] = useState('idle'); // 'idle' | 'syncing' | 'synced' | 'offline'
+      const [serverStatus, setServerStatus] = useState('idle'); // 'idle' | 'syncing' | 'synced' | 'waking' | 'offline'
       // Keep a ref to always have current state in callbacks without re-creating intervals
       const stateRef = useRef(state);
       useEffect(() => { stateRef.current = state; }, [state]);
 
       async function doServerSync() {
         setServerStatus('syncing');
-        const ok = await syncToServer(stateRef.current);
+        const ok = await syncToServer(stateRef.current, {
+          onWakingUp: () => setServerStatus('waking'),
+        });
         setServerStatus(ok ? 'synced' : 'offline');
       }
 
@@ -964,6 +1004,7 @@
       const [loadingAuto, setLoadingAuto] = useState(true);
       const [selectedResume, setSelectedResume] = useState(null);
       const [starting, setStarting] = useState(false);
+      const [serverWakingUp, setServerWakingUp] = useState(false);
       const fileInputRef = useRef(null);
 
       useEffect(() => {
@@ -998,9 +1039,13 @@
         const id = annotatorId.trim() || generateAnnotatorId();
         if (!scenarios) { setLoadError('Please load a scenarios.json file first.'); return; }
         setStarting(true);
+        setServerWakingUp(false);
         let existingSession = resumeSession || loadFromLocalStorage(id);
         // Check server for a newer session (falls back gracefully if server is offline)
-        const serverSession = await loadSessionFromServer(id);
+        const serverSession = await loadSessionFromServer(id, {
+          onWakingUp: () => setServerWakingUp(true),
+        });
+        setServerWakingUp(false);
         if (serverSession && serverSession.savedAt) {
           const localSavedAt = existingSession?.savedAt || 0;
           if (serverSession.savedAt > localSavedAt) {
@@ -1149,6 +1194,16 @@
                 )}
               </div>
 
+              {serverWakingUp && (
+                <div className="flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-amber-800 text-sm">
+                  <svg className="w-4 h-4 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Waking up the server… This may take 30–60 seconds on first load.
+                </div>
+              )}
+
               {/* Start / Resume button */}
               <button
                 onClick={() => handleStart(selectedResume)}
@@ -1161,7 +1216,7 @@
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    Loading…
+                    {serverWakingUp ? 'Connecting…' : 'Loading…'}
                   </>
                 ) : selectedResume ? (
                   <>
@@ -1273,7 +1328,7 @@
                   Download My Annotations (CSV)
                 </button>
                 <a
-                  href={`/api/export/csv/${encodeURIComponent(annotatorId)}`}
+                  href={apiUrl(`/api/export/csv/${encodeURIComponent(annotatorId)}`)}
                   className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-emerald-300 bg-emerald-50 text-emerald-700 font-semibold hover:bg-emerald-100 transition-all"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1310,7 +1365,7 @@
               <p className="text-xs text-slate-400 text-center">
                 Your annotations are saved in the server database and locally in this browser.<br />
                 The researcher can collect all data at{' '}
-                <a href="/admin" className="text-indigo-400 hover:underline font-mono">/admin</a>.
+                <a href={apiUrl('/admin')} className="text-indigo-400 hover:underline font-mono" target="_blank" rel="noopener noreferrer">/admin</a>.
               </p>
             </div>
           </div>
