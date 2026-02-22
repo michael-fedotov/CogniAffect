@@ -1,4 +1,4 @@
-# BWS Empathy Annotation App
+# CogniAffect - BWS Empathy Annotation App
 
 An interactive Best-Worst Scaling (BWS) annotation tool for evaluating cognitive and affective empathy in therapeutic dialogue responses. Includes a Flask backend that collects all annotations from all annotators in a central SQLite database.
 
@@ -6,7 +6,7 @@ An interactive Best-Worst Scaling (BWS) annotation tool for evaluating cognitive
 
 | File | Description |
 |---|---|
-| `annotation_app.html` | The complete frontend application |
+| `index.html` | The complete frontend application |
 | `server.py` | Flask backend server (recommended) |
 | `scenarios.json` | Input data: therapy scenarios with 3 responses each |
 | `sample_output.csv` | Example of the exported CSV format |
@@ -102,9 +102,9 @@ http://localhost:5000/api/export/csv
 
 ## Fallback: No Server (localStorage only)
 
-If you cannot run a server, annotators can open `annotation_app.html` directly in their browser:
+If you cannot run a server, annotators can open `index.html` directly in their browser:
 
-1. Double-click `annotation_app.html` to open it
+1. Double-click `index.html` to open it
 2. When prompted, upload `scenarios.json` using the file picker
 3. Annotate all scenarios
 4. Click **Download My Annotations (CSV)** on the completion screen
