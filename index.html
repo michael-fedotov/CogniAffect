@@ -349,11 +349,11 @@
     function ProgressBar({ current, total }) {
       const pct = total > 0 ? Math.round((current / total) * 100) : 0;
       return (
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="text-sm font-medium text-slate-600 whitespace-nowrap">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-sm font-medium text-slate-600 whitespace-nowrap flex-shrink-0">
             {current} / {total} complete
           </span>
-          <div className="flex-1 bg-slate-200 rounded-full h-2 min-w-[80px]">
+          <div className="flex-1 min-w-0 bg-slate-200 rounded-full h-2">
             <div
               className="bg-indigo-600 h-2 rounded-full transition-all duration-500"
               style={{ width: `${pct}%` }}
@@ -363,7 +363,7 @@
               aria-valuemax={100}
             />
           </div>
-          <span className="text-sm font-semibold text-indigo-600 whitespace-nowrap">{pct}%</span>
+          <span className="text-sm font-semibold text-indigo-600 whitespace-nowrap flex-shrink-0">{pct}%</span>
         </div>
       );
     }
@@ -765,12 +765,12 @@
       const completedCount = scenarios.filter(s => isAnnotationComplete(annotations[s.scenario_id])).length;
 
       return (
-        <aside className="w-56 flex-shrink-0 flex flex-col bg-white border-r border-slate-200 overflow-hidden">
-          <div className="p-4 border-b border-slate-200">
+        <aside className="w-72 flex-shrink-0 flex flex-col bg-white border-r border-slate-200 min-w-0">
+          <div className="p-4 border-b border-slate-200 min-w-0">
             <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-2">Scenarios</p>
             <ProgressBar current={completedCount} total={scenarios.length} />
           </div>
-          <nav className="flex-1 overflow-y-auto scrollbar-thin py-2" aria-label="Scenario list">
+          <nav className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin py-2 min-w-0" aria-label="Scenario list">
             {scenarios.map((s, idx) => {
               const status = getStatus(s.scenario_id);
               const isCurrent = idx === currentScenarioIndex;
@@ -778,7 +778,7 @@
                 <button
                   key={s.scenario_id}
                   onClick={() => dispatch({ type: 'NAVIGATE', index: idx })}
-                  className={`w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm transition-colors
+                  className={`w-full text-left flex items-center gap-3 px-4 py-2.5 text-sm transition-colors min-w-0
                     ${isCurrent
                       ? 'bg-indigo-50 text-indigo-700 font-semibold border-r-2 border-indigo-600'
                       : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
@@ -786,7 +786,7 @@
                   aria-current={isCurrent ? 'page' : undefined}
                 >
                   <ScenarioStatusBadge status={status} />
-                  <span className="truncate">{s.scenario_id.replace('_', ' ')}</span>
+                  <span className="break-words">{s.scenario_id.replace('_', ' ')}</span>
                 </button>
               );
             })}
@@ -817,7 +817,7 @@
               </svg>
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm font-bold text-slate-800 truncate">BWS Empathy Annotation</h1>
+              <h1 className="text-sm font-bold text-slate-800 break-words">BWS Empathy Annotation</h1>
               <p className="text-xs text-slate-500">ID: <span className="font-mono font-semibold text-indigo-600">{state.annotatorId}</span></p>
             </div>
           </div>
@@ -956,7 +956,7 @@
             {showMobileSidebar && (
               <div className="fixed inset-0 z-40 flex md:hidden" role="dialog" aria-modal="true">
                 <div className="absolute inset-0 bg-black/40" onClick={() => setShowMobileSidebar(false)} />
-                <div className="relative z-50 w-64 bg-white h-full shadow-2xl">
+                <div className="relative z-50 w-72 bg-white h-full shadow-2xl min-w-0">
                   <div className="flex items-center justify-between p-4 border-b border-slate-200">
                     <span className="font-bold text-slate-800">Scenarios</span>
                     <button onClick={() => setShowMobileSidebar(false)} className="p-1 rounded-lg hover:bg-slate-100" aria-label="Close sidebar">
