@@ -571,8 +571,8 @@ def admin():
 
       var cog = d.cognitive;
       var aff = d.affective;
-      var cogKeys = Object.keys(cog);
-      var affKeys = Object.keys(aff);
+      var cogKeys = Object.keys(cog).sort(function(a, b) { return cog[b] - cog[a]; });
+      var affKeys = Object.keys(aff).sort(function(a, b) { return aff[b] - aff[a]; });
 
       // Insight callout
       var insight = '';
@@ -590,7 +590,7 @@ def admin():
 
       // Score tables
       function scoreTable(title, color, items) {
-        var keys = Object.keys(items);
+        var keys = Object.keys(items).sort(function(a, b) { return items[b] - items[a]; });
         var html = '<div class="flex-1 min-w-[260px]">' +
           '<h3 class="text-sm font-bold text-' + color + '-700 mb-3">' + title + '</h3>' +
           '<div class="space-y-3">';
