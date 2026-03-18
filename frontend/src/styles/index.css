@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    font-size: 16px;
+    background-color: #F8FAFC;
+    color: #0F172A;
+    margin: 0;
+  }
+
+  #root {
+    height: 100%;
+    min-height: 0;
+  }
+
+  :focus-visible {
+    outline: 2px solid #4F46E5;
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  .context-turn {
+    white-space: pre-wrap;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #F1F5F9;
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 3px;
+  }
+
+  .bws-error-slot {
+    min-height: 3.25rem;
+  }
+
+  .bws-card {
+    contain: layout;
+  }
+
+  .radio-option input[type='radio']:focus-visible + span {
+    outline: 2px solid #4F46E5;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  @media (max-width: 768px) {
+    .sidebar-desktop {
+      display: none;
+    }
+  }
+}

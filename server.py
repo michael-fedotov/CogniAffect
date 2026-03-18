@@ -27,6 +27,10 @@ CORS(app, resources={r"/*": {"origins": "https://michael-fedotov.github.io/Cogni
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "annotations.db")
 
+# Vite production build output lives at <project-root>/dist/
+# Fall back to serving the legacy index.html if dist/ hasn't been built yet.
+DIST_DIR = os.path.join(BASE_DIR, "dist")
+
 CSV_COLUMNS = [
     "annotation_id", "annotator_id", "scenario_id", "context_snippet",
     "response_a_label", "response_b_label", "response_c_label",
@@ -80,9 +84,23 @@ init_db()
 
 # ── Static files ──────────────────────────────────────────────────────────────
 
+def _dist_built():
+    """Return True when the Vite build output exists."""
+    return os.path.isfile(os.path.join(DIST_DIR, "index.html"))
+
+
 @app.route("/")
 def index():
+    if _dist_built():
+        return send_from_directory(DIST_DIR, "index.html")
+    # Legacy fallback: serve the original single-file app
     return send_from_directory(BASE_DIR, "index.html")
+
+
+@app.route("/assets/<path:filename>")
+def vite_assets(filename):
+    """Serve Vite-hashed JS/CSS bundles from dist/assets/."""
+    return send_from_directory(os.path.join(DIST_DIR, "assets"), filename)
 
 
 @app.route("/scenarios.json")
