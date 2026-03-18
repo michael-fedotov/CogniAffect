@@ -1,43 +1,54 @@
-# CogniAffect - BWS Empathy Annotation App
+# CogniAffect — BWS Empathy Annotation Tool
 
-An interactive Best-Worst Scaling (BWS) annotation tool for evaluating cognitive and affective empathy in therapeutic dialogue responses. Includes a Flask backend that collects all annotations from all annotators in a central SQLite database.
-
-## Files
-
-| File | Description |
-|---|---|
-| `index.html` | The complete frontend application |
-| `server.py` | Flask backend server (recommended) |
-| `scenarios.json` | Input data: therapy scenarios with 3 responses each |
-| `sample_output.csv` | Example of the exported CSV format |
-| `pyproject.toml` | Poetry project and dependency configuration |
-| `requirements.txt` | Fallback pip dependency list |
-| `README.md` | This file |
+An interactive **Best-Worst Scaling (BWS)** annotation tool for evaluating cognitive and affective empathy in therapeutic dialogue responses. Annotators compare three candidate responses to a therapy excerpt and select which is **most** and **least** empathic across two dimensions (cognitive and affective). All responses are stored centrally in a SQLite database and can be exported as CSV for analysis.
 
 ---
 
-## Quickstart (Recommended: Flask Server)
+## Project Structure
 
-This is the correct way to run the app for a study with multiple annotators.
-
-### 1. Install dependencies
-
-**With Poetry (recommended):**
-
-If you don't have Poetry yet, install it once:
-```bash
-curl -sSL https://install.python-poetry.org | python3 -
+```
+/
+├── server.py             # Flask backend — API, database, admin dashboard
+├── scenarios.json        # Study stimuli: therapy scenarios + 3 responses each
+├── annotations.db        # SQLite database (auto-created on first run)
+├── requirements.txt      # Pip fallback dependency list
+├── pyproject.toml        # Poetry project configuration
+├── sample_output.csv     # Example of the exported CSV format
+└── frontend/             # React + Vite source code
+    ├── src/
+    │   ├── views/        # Page-level components (WelcomeScreen, AnnotationScreen, etc.)
+    │   ├── utils/        # API client, localStorage helpers, annotation logic
+    │   └── state/        # Reducer + action types for annotation state
+    ├── vite.config.js    # Build config — outputs to ../dist, proxies /api in dev
+    └── README.md         # Frontend-specific deployment notes
 ```
 
-Then, from the project folder, install all dependencies into an isolated virtual environment:
+After running a production build, a `dist/` folder appears at the project root. Flask serves from this folder automatically.
+
+---
+
+## Quickstart — Running Locally
+
+### Prerequisites
+
+- **Python 3.9+**
+- **Node.js 18+** and **npm** (only needed if you want to modify the frontend)
+- **Poetry** (recommended Python package manager) — install once with:
+  ```bash
+  curl -sSL https://install.python-poetry.org | python3 -
+  ```
+
+### 1. Install Python dependencies
+
+**With Poetry (recommended):**
 ```bash
 cd "Directed Readings BWS Annotation"
 poetry install
 ```
 
-Poetry reads `pyproject.toml`, resolves exact versions, writes a `poetry.lock` file (committed to version control so every collaborator gets identical dependencies), and creates a virtual environment automatically.
+Poetry creates an isolated virtual environment and installs exact versions from `poetry.lock`. Every collaborator and every deployment gets identical packages.
 
-**With pip (fallback, no Poetry):**
+**With pip (no Poetry):**
 ```bash
 pip install -r requirements.txt
 ```
@@ -54,21 +65,14 @@ poetry run python server.py
 python server.py
 ```
 
-**Custom port** (any of these work):
+**Custom port or options:**
 ```bash
-python server.py --port 8080
-python server.py -p 8080
-PORT=8080 python server.py        # environment variable
+python server.py --port 8080     # change port
+python server.py --debug         # enable auto-reload on file changes
+python server.py --help          # see all flags
 ```
 
-**Other flags:**
-```bash
-python server.py --help           # show all options
-python server.py --debug          # enable auto-reload during development
-python server.py --host 127.0.0.1 # bind to localhost only (not LAN-accessible)
-```
-
-You will see:
+The terminal will print:
 
 ```
   BWS Empathy Annotation Server
@@ -79,74 +83,125 @@ You will see:
   Database: /path/to/annotations.db
 ```
 
-### 3. Share with annotators
+### 3. Open the app
 
-- **Local network**: Share `http://YOUR_IP:5000` (find your IP with `ifconfig` / `ipconfig`)
-- **Remote/hosted**: Deploy to Render, Railway, or any VPS (see Deployment section below)
+- **Annotators**: open `http://localhost:5000` — they enter an ID and annotate.
+- **Researcher (admin)**: open `http://localhost:5000/admin` — see completion status and download CSVs.
 
-Each annotator opens the URL, enters their ID, and annotates. All responses go directly into `annotations.db`.
+To share with annotators on your local network, give them `http://YOUR_IP:5000` (find your IP with `ifconfig` on Mac/Linux or `ipconfig` on Windows).
 
-### 4. Collect results
+---
 
-Open `http://localhost:5000/admin` in your browser to:
-- See how many annotators have completed their sessions
-- Download individual annotator CSVs
-- Download **all annotations in one CSV** file
+## Annotator Workflow
 
-Or download directly:
+1. Open the app URL in a browser.
+2. Enter an **Annotator ID** (or leave blank for an auto-generated ID like `ANNO_042`).
+3. For each therapy scenario, read the context and three anonymized responses (A, B, C).
+4. Answer two BWS questions:
+   - **Cognitive Empathy** — which response best / least shows understanding of the client's perspective?
+   - **Affective Empathy** — which response best / least validates the client's emotional experience?
+5. Optionally type a free-text reasoning note for each question.
+6. Navigate freely via the sidebar — skip and return to any scenario.
+7. Click **Finish & Export** on the final scenario.
+8. Download the personal CSV from the completion screen (or the researcher collects everything from the admin panel).
+
+**Session recovery**: annotations sync to the server every 30 seconds and within 1.5 seconds of each change. If the browser is closed, reopening the app and entering the same ID restores the full session from the server. A status badge in the header shows **Server synced** (green), **Syncing…**, or **Local only** (amber — server unreachable, saving to browser localStorage as backup).
+
+---
+
+## Researcher Workflow
+
+1. Run `python server.py` (or deploy it, see below).
+2. Share the URL with annotators.
+3. Monitor progress at `/admin` — shows completion counts per annotator.
+4. When all annotators are done, download the combined CSV from `/api/export/csv`.
+
+---
+
+## Frontend Development
+
+The frontend is a React + Vite single-page application. You only need to touch this if you want to change the UI.
+
+### Dev server (hot reload)
+
+```bash
+cd frontend
+npm install          # first time only
+npm run dev
 ```
-http://localhost:5000/api/export/csv
+
+Vite serves the app at `http://localhost:5173`. API calls (`/api/...`, `/admin`) are automatically proxied to Flask at `http://localhost:5000`. `scenarios.json` is served by a Vite middleware from the project root — no file copying needed. Flask must be running separately.
+
+If Flask is on a port other than 5000:
+```bash
+FLASK_PROXY_TARGET=http://localhost:5001 npm run dev
 ```
 
----
+### Production build
 
-## Fallback: No Server (localStorage only)
+```bash
+cd frontend
+npm run build
+```
 
-If you cannot run a server, annotators can open `index.html` directly in their browser:
-
-1. Double-click `index.html` to open it
-2. When prompted, upload `scenarios.json` using the file picker
-3. Annotate all scenarios
-4. Click **Download My Annotations (CSV)** on the completion screen
-5. Each annotator emails you their CSV file
-
-> Note: When running without a server, the "Download from Server" button on the completion screen will not work. The "Download My Annotations (CSV)" button always works.
+Output goes to `dist/` at the **project root** (configured in `vite.config.js` as `outDir: '../dist'`). Running `python server.py` afterward serves this build automatically.
 
 ---
 
-## Workflow
+## Deployment on Render
 
-### For annotators
-1. Open `http://localhost:5000` in a browser
-2. Enter your Annotator ID (or leave blank to auto-generate one like `ANNO_042`)
-3. Annotate each scenario by answering two questions:
-   - **Cognitive Empathy**: Which response best/least shows understanding of the client's perspective?
-   - **Affective Empathy**: Which response best/least validates the client's emotional experience?
-4. Add optional reasoning notes for each question
-5. Navigate freely — skip and return to scenarios using the sidebar
-6. Click **Finish & Export** on the last scenario
-7. Download your CSV from the completion screen (or the researcher collects it from the admin panel)
+The app is deployed in two parts on [Render](https://render.com):
 
-### For the researcher
-1. Run `python server.py`
-2. Send the URL to annotators
-3. Monitor progress at `http://localhost:5000/admin`
-4. When all annotators are done, download `http://localhost:5000/api/export/csv`
+```
+Browser
+  │
+  ├── Static Site (frontend bundle at dist/)
+  │     URL: https://<static-site>.onrender.com
+  │     Talks to ↓
+  │
+  └── Web Service (server.py)
+        URL: https://cogniaffect.onrender.com
+        Serves: /api/*, /admin, /scenarios.json
+```
+
+### Web Service (backend — already running)
+
+| Setting | Value |
+|---|---|
+| Build command | `pip install -r requirements.txt` |
+| Start command | `python server.py` |
+| Env var `CORS_ORIGINS` | `https://<static-site>.onrender.com` |
+
+`CORS_ORIGINS` is a comma-separated list of allowed frontend origins. If unset, only `https://michael-fedotov.github.io/CogniAffect/` is allowed. To support both the Render static site and GitHub Pages simultaneously:
+```
+CORS_ORIGINS=https://<static-site>.onrender.com,https://michael-fedotov.github.io/CogniAffect/
+```
+
+### Static Site (frontend)
+
+| Setting | Value |
+|---|---|
+| Build command | `cd frontend && npm ci && npm run build` |
+| Publish directory | `dist` |
+| Env var `VITE_API_BASE` | `https://cogniaffect.onrender.com` |
+
+`VITE_API_BASE` is baked into the JavaScript bundle at build time. It tells the frontend where the Flask API lives when the static files are not served by Flask itself. No trailing slash.
+
+### GitHub Pages (existing deploy — no changes needed)
+
+The frontend detects the `michael-fedotov.github.io` hostname at runtime and automatically uses `https://cogniaffect.onrender.com` as the API base. `VITE_API_BASE` is not required for this path.
+
+### Accessing the app via the Web Service URL directly
+
+You can also open the app directly at `https://cogniaffect.onrender.com` (without a separate static site). Flask serves the built `dist/` bundle, so the frontend and API share the same origin — no `VITE_API_BASE` or CORS configuration is needed in this case. This is the simplest option.
+
+> **Render free tier note**: the Web Service spins down after 15 minutes of inactivity. The first request after a cold start can take ~30 seconds. The app shows a "Waking up the server…" banner during this time — annotators should wait for it to disappear before proceeding.
 
 ---
 
-## Session Recovery
+## Scenarios File (`scenarios.json`)
 
-- Annotations sync to the server **automatically every 30 seconds** and after every annotation change (1.5s debounce)
-- Progress is also saved to the browser's **localStorage** as a local backup
-- If an annotator accidentally closes the browser, they can re-open the app and enter their ID — the server restores their session automatically
-- The header shows a sync status indicator: **Server synced** (green) / **Syncing…** (spinning) / **Local only** (amber — server unreachable)
-
----
-
-## Adding More Scenarios
-
-Edit `scenarios.json` following this structure:
+Each scenario represents a therapy excerpt with three candidate responses. Edit this file to change the study stimuli.
 
 ```json
 {
@@ -154,7 +209,7 @@ Edit `scenarios.json` following this structure:
   "import_timestamp": "2024-01-01T00:00:00Z",
   "scenarios": [
     {
-      "scenario_id": "SCENARIO_04",
+      "scenario_id": "SCENARIO_01",
       "context": "Therapist: ...\n\nClient: ...",
       "responses": [
         { "response_id": "A", "text": "..." },
@@ -171,13 +226,12 @@ Edit `scenarios.json` following this structure:
 }
 ```
 
-Response order is randomized automatically per annotator. `ground_truth_labels` are never shown to annotators — only stored in the CSV output after unblinding.
+- Response order is **randomized per annotator** — the A/B/C labels annotators see are not the same as the IDs in the file.
+- `ground_truth_labels` are never shown to annotators. They appear in the exported CSV after unblinding so you can map selections back to condition.
 
 ---
 
 ## CSV Output Format
-
-The exported CSV has the following columns:
 
 | Column | Description |
 |---|---|
@@ -194,10 +248,24 @@ The exported CSV has the following columns:
 | `affective_most` | Response selected as MOST affectively empathic (A/B/C) |
 | `affective_least` | Response selected as LEAST affectively empathic (A/B/C) |
 | `affective_reasoning` | Optional free-text explanation |
-| `timestamp` | ISO 8601 timestamp when the annotation was completed |
-| `session_duration_seconds` | Time spent on this scenario (seconds) |
+| `timestamp` | ISO 8601 timestamp of annotation completion |
+| `session_duration_seconds` | Time spent on this scenario |
 
-> **Important**: `response_a_label` through `response_c_label` reflect the *displayed* order after per-annotator randomization. For example, if shuffling placed the original `LLM_AFFECTIVE` response in display position A, then `response_a_label = LLM_AFFECTIVE`. Match `cognitive_most` / `cognitive_least` (display letters A/B/C) against `response_*_label` for analysis.
+**Important**: `response_a_label` through `response_c_label` reflect the *displayed* order after per-annotator randomization. To recover the true condition, match `cognitive_most` / `cognitive_least` (display letter A/B/C) against `response_*_label`:
+
+```python
+import pandas as pd
+
+df = pd.read_csv("all_annotations.csv")
+
+def true_label(row, display_letter):
+    return row[f"response_{display_letter.lower()}_label"]
+
+df['cognitive_most_label']  = df.apply(lambda r: true_label(r, r['cognitive_most']), axis=1)
+df['cognitive_least_label'] = df.apply(lambda r: true_label(r, r['cognitive_least']), axis=1)
+df['affective_most_label']  = df.apply(lambda r: true_label(r, r['affective_most']), axis=1)
+df['affective_least_label'] = df.apply(lambda r: true_label(r, r['affective_least']), axis=1)
+```
 
 ---
 
@@ -207,132 +275,43 @@ The exported CSV has the following columns:
 |---|---|---|
 | `/` | GET | Serves the annotation app |
 | `/scenarios.json` | GET | Serves the scenarios data |
-| `/admin` | GET | Admin dashboard |
-| `/api/sync` | POST | Receive and store session + annotations |
+| `/admin` | GET | Admin dashboard (completion status, CSV download) |
+| `/api/sync` | POST | Upsert session + annotations from client |
 | `/api/session/<id>` | GET | Retrieve a saved session by annotator ID |
 | `/api/export/csv` | GET | Download all annotations (all annotators) |
 | `/api/export/csv/<id>` | GET | Download annotations for one annotator |
-| `/api/annotators` | GET | JSON list of annotators with completion stats |
+| `/api/annotators` | GET | JSON list of annotators with stats |
 | `/api/status` | GET | JSON summary of database state |
-
----
-
-## Downstream Analysis
-
-Load all annotations in Python:
-
-```python
-import pandas as pd
-
-# From server export
-df = pd.read_csv("all_annotations_20240222_103000.csv")
-
-# Map display labels back to ground truth
-def true_label(row, display_letter):
-    return row[f"response_{display_letter.lower()}_label"]
-
-df['cognitive_most_label']  = df.apply(lambda r: true_label(r, r['cognitive_most']), axis=1)
-df['cognitive_least_label'] = df.apply(lambda r: true_label(r, r['cognitive_least']), axis=1)
-df['affective_most_label']  = df.apply(lambda r: true_label(r, r['affective_most']), axis=1)
-df['affective_least_label'] = df.apply(lambda r: true_label(r, r['affective_least']), axis=1)
-
-# BWS score = (times chosen as MOST - times chosen as LEAST) / total appearances
-bws = df.groupby(['scenario_id', 'cognitive_most_label']).size() - \
-      df.groupby(['scenario_id', 'cognitive_least_label']).size()
-```
-
----
-
-## Deployment (Optional)
-
-To host the server so annotators can access it remotely without being on your network:
-
-### Render (free tier)
-1. Push this folder to a GitHub repository
-2. Create a new **Web Service** on [render.com](https://render.com)
-3. Set the build command: `pip install -r requirements.txt`
-4. Set the start command: `python server.py`
-5. Share the Render URL with annotators
-
-### Railway
-```bash
-npm install -g @railway/cli
-railway login
-railway init
-railway up
-```
-
-### Quick tunnel (temporary, for testing)
-```bash
-# Using ngrok
-ngrok http 5000
-# Using VS Code / Cursor port forwarding
-# Right-click port 5000 in the Ports tab → Make Public
-```
 
 ---
 
 ## Technical Notes
 
-- **No data leaves your server** — all annotations are stored in `annotations.db` on the machine running `server.py`
-- **SQLite** — zero-configuration, the database file is created automatically on first run
-- **Graceful offline fallback** — if the server is unreachable, the frontend silently saves to localStorage and shows "Local only"
-- **Idempotent sync** — re-submitting the same annotation updates it (`INSERT OR REPLACE`), so retries are safe
-- **Responsive** — works on desktop and mobile browsers
-
----
-
-## Poetry Reference
-
-All common tasks using Poetry:
-
-```bash
-# Install / sync all dependencies from pyproject.toml + poetry.lock
-poetry install
-
-# Run the server inside Poetry's virtual environment
-poetry run python server.py
-
-# Open a shell inside the virtual environment
-poetry shell
-python server.py   # then run directly
-
-# Add a new dependency (e.g. if you extend the project)
-poetry add flask-cors
-
-# Add a dev-only dependency (e.g. for testing)
-poetry add --group dev pytest
-
-# Update all dependencies to their latest allowed versions
-poetry update
-
-# Show installed packages and their versions
-poetry show
-
-# Export to requirements.txt (for environments without Poetry)
-poetry export -f requirements.txt --output requirements.txt --without-hashes
-
-# Check for dependency conflicts or issues
-poetry check
-```
-
-The `poetry.lock` file is generated automatically on the first `poetry install`. Commit it to version control so every collaborator (and any future deployment) uses the exact same package versions.
+- **SQLite** — zero-configuration; `annotations.db` is created automatically on first run. No database server required.
+- **No data leaves your machine** (when running locally) — all annotations stay in `annotations.db`.
+- **Idempotent sync** — re-submitting the same annotation updates it (`INSERT OR REPLACE`), so retries and reconnections are safe.
+- **Graceful offline fallback** — if the server is unreachable, the frontend saves to `localStorage` and shows "Local only". Data is uploaded to the server the next time it is reachable.
+- **CORS** — controlled by the `CORS_ORIGINS` environment variable on the backend (see Deployment section).
+- **Responsive** — works on desktop and mobile browsers.
 
 ---
 
 ## Troubleshooting
 
 **"Local only" badge shows in the header**
-→ The server is not reachable. Make sure `python server.py` is running and the URL is correct.
+→ The server is not reachable. Check that `python server.py` is running and the URL in the browser matches the server's address.
 
-**Annotator can't see their previous session**
-→ Make sure they use the same Annotator ID. The server matches sessions by ID.
+**Annotator cannot see their previous session**
+→ They must use the exact same Annotator ID. The server matches sessions by ID string.
 
 **`ModuleNotFoundError: No module named 'flask'`**
-→ With Poetry: run `poetry install`. With pip: run `pip install flask` (or `pip3 install flask`).
+→ Run `poetry install` (Poetry) or `pip install -r requirements.txt` (pip).
 
 **`poetry: command not found`**
-→ Install Poetry: `curl -sSL https://install.python-poetry.org | python3 -` then restart your terminal.
+→ Install Poetry: `curl -sSL https://install.python-poetry.org | python3 -` then open a new terminal window.
 
-**CSV fields contain strange characters in Excel**
-→ Use Data → From Text/CSV with UTF-8 encoding, or open in Google Sheets which handles UTF-8 automatically.
+**CSV shows garbled characters in Excel**
+→ Use Excel's Data → From Text/CSV import with UTF-8 encoding, or open in Google Sheets (handles UTF-8 automatically).
+
+**Render app takes 30+ seconds to respond on first load**
+→ Expected on the free tier (server spins down when idle). The "Waking up the server…" banner will disappear once it is ready.
