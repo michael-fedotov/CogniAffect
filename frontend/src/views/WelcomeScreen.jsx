@@ -7,6 +7,7 @@ import {
 } from '../utils/storage/localSessionStorage';
 import { loadSessionFromServer } from '../utils/api/annotationApi';
 import { ACTION_TYPES } from '../state/annotationActionTypes';
+import { apiUrl } from '../utils/constants/api';
 
 export function WelcomeScreen({ dispatch }) {
   const [annotatorId, setAnnotatorId] = useState('');
@@ -22,7 +23,7 @@ export function WelcomeScreen({ dispatch }) {
   useEffect(() => {
     setExistingSessions(findExistingSessions());
 
-    fetch('scenarios.json')
+    fetch(apiUrl('/scenarios.json'))
       .then((r) => {
         if (!r.ok) throw new Error('Not found');
         return r.json();

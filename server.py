@@ -22,7 +22,12 @@ from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://michael-fedotov.github.io/CogniAffect/"}})
+_raw_origins = os.environ.get(
+    'CORS_ORIGINS',
+    'https://michael-fedotov.github.io/CogniAffect/'
+)
+_allowed_origins = [o.strip() for o in _raw_origins.split(',')]
+CORS(app, resources={r"/*": {"origins": _allowed_origins}})
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "annotations.db")
