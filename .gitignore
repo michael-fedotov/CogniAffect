@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Local database (dev/test data; production uses its own DB or persistent disk)
+annotations.db
+
+# Environment
+.venv/
+venv/
+.env
+.env.local
+
+# IDE / OS
+.DS_Store
+*.swp
+*.swo
