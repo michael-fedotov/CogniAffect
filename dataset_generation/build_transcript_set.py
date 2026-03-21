@@ -12,7 +12,7 @@ Usage:
   2.1 python build_transcript_set.py OR
   2.2 python build_transcript_set.py --input outputs/shortlist.csv --output outputs/transcript_set.csv
 
-Defaults: input `outputs/shortlist.csv`; outputs `outputs/transcript_set.csv`.
+Defaults: input `all_rows.csv`; outputs `outputs/transcript_set.csv` and `outputs/transcript_set_build.log`. Rows are sanitized then filtered (`--min-text`, `--min-text-words`, etc.).
 """
 
 from __future__ import annotations
@@ -21,11 +21,17 @@ import argparse
 import csv
 import random
 import re
+import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
 _DATASET_DIR = Path(__file__).resolve().parent
+if str(_DATASET_DIR) not in sys.path:
+    sys.path.insert(0, str(_DATASET_DIR))
+
+from text_sanitize import sanitize_transcript_row  
+
 _OUTPUT_DIR = _DATASET_DIR / "outputs"
 
 
@@ -142,13 +148,13 @@ def passes_quality(
     min_prior_dialog: int,
     min_prior_speaker: int,
     min_text: int,
+    min_text_words: int,
 ) -> tuple[bool, str]:
     """
     Apply minimum-length filters and drop trivial listener replies.
 
+    Expects ``row`` fields to already be **sanitized** (see ``text_sanitize``).
     Compares lengths after stripping XML-like tags from context fields.
-    Rejects very short closings (e.g. "Take care.") when they have at most
-    three words.
 
     Parameters
     ----------
@@ -160,14 +166,15 @@ def passes_quality(
         Minimum character length for stripped ``prior_speaker_turn``.
     min_text : int
         Minimum character length for the listener reply in ``text``.
+    min_text_words : int
+        Minimum word count (whitespace-split) for ``text``.
 
     Returns
     -------
     ok : bool
         True if the row should be kept in the eligible pool.
     reason : str
-        Empty when ``ok`` is True; otherwise a short machine-readable reason
-        (e.g. ``prior_dialog too short (...)``).
+        Empty when ``ok`` is True; otherwise a short machine-readable reason.
     """
     if not mi_ok(row):
         return False, "mi_adherent!=1"
@@ -183,6 +190,12 @@ def passes_quality(
     if len(tx) < min_text:
         return False, f"text too short ({len(tx)}<{min_text})"
 
+    words = tx.split()
+    wc = len(words)
+    if wc < min_text_words:
+        return False, f"text too few words ({wc}<{min_text_words})"
+
+    key = tx.rstrip(".!?").lower()
     short_closings = {
         "take care",
         "take care.",
@@ -194,11 +207,35 @@ def passes_quality(
         "ok.",
         "okay",
         "okay.",
+        "bye",
+        "bye.",
+        "goodbye",
+        "goodbye.",
     }
-    key = tx.rstrip(".!?").lower()
-    wc = len(tx.split())
+    trivial_short = {
+        "yeah",
+        "yeah.",
+        "yep",
+        "yep.",
+        "nope",
+        "nope.",
+        "sure",
+        "sure.",
+        "i agree",
+        "i agree.",
+        "i see",
+        "i see.",
+        "i understand",
+        "i understand.",
+        "sounds good",
+        "sounds good.",
+        "fair enough",
+        "fair enough.",
+    }
     if wc <= 3 and key in short_closings:
         return False, "trivial closing"
+    if wc <= 5 and key in trivial_short:
+        return False, "trivial agreement"
 
     return True, ""
 
@@ -301,18 +338,21 @@ def main() -> None:
         Writes files under ``outputs/`` and prints paths to stdout.
     """
     ap = argparse.ArgumentParser(description="Build 64-conversation BWS shortlist CSV.")
-    ap.add_argument("--input", type=Path, default=_DATASET_DIR / "all_rows.csv")
+    ap.add_argument("--input", type=Path, default=_DATASET_DIR / "full_dataset_rows.csv")
     ap.add_argument("--output", type=Path, default=_OUTPUT_DIR / "transcript_set.csv")
     ap.add_argument("--log", type=Path, default=_OUTPUT_DIR / "transcript_set_build.log")
     ap.add_argument("--n", type=int, default=64)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--min-prior-dialog", type=int, default=100)
     ap.add_argument("--min-prior-speaker", type=int, default=50)
-    ap.add_argument("--min-text", type=int, default=25)
+    ap.add_argument("--min-text", type=int, default=50)
+    ap.add_argument("--min-text-words", type=int, default=15)
     args = ap.parse_args()
+
 
     rows = load_rows(args.input)
     collapsed, collapse_log = collapse_final_turn(rows)
+    collapsed = [sanitize_transcript_row(r) for r in collapsed]
 
     eligible: list[dict[str, Any]] = []
     excluded: list[tuple[str, str]] = []
@@ -322,6 +362,7 @@ def main() -> None:
             args.min_prior_dialog,
             args.min_prior_speaker,
             args.min_text,
+            args.min_text_words,
         )
         if ok:
             eligible.append(row)
