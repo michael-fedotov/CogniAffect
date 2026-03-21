@@ -19,10 +19,16 @@ import argparse
 import csv
 import json
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 _DATASET_DIR = Path(__file__).resolve().parent
+if str(_DATASET_DIR) not in sys.path:
+    sys.path.insert(0, str(_DATASET_DIR))
+
+from text_sanitize import sanitize_transcript_row  # noqa: E402
+
 _OUTPUT_DIR = _DATASET_DIR / "outputs"
 
 
@@ -77,9 +83,12 @@ def main() -> None:
         for row in csv.DictReader(f):
             rows.append({k.lstrip("\ufeff"): v for k, v in row.items()})
 
+    rows = [sanitize_transcript_row(dict(r)) for r in rows]
+
     scenarios = []
     for i, row in enumerate(rows, start=1):
         sid = f"SCENARIO_{i:02d}"
+        pd = row.get("prior_dialog") or ""
         scenarios.append(
             {
                 "scenario_id": sid,
@@ -87,7 +96,7 @@ def main() -> None:
                 "source_row_index": row.get("index", ""),
                 "turn": row.get("turn", ""),
                 "final_agreed_label": row.get("final_agreed_label", ""),
-                "context": format_context(row.get("prior_dialog") or ""),
+                "context": format_context(pd),
                 "responses": [
                     {
                         "response_id": "A",
