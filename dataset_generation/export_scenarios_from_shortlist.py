@@ -27,7 +27,7 @@ _DATASET_DIR = Path(__file__).resolve().parent
 if str(_DATASET_DIR) not in sys.path:
     sys.path.insert(0, str(_DATASET_DIR))
 
-from text_sanitize import sanitize_transcript_row  # noqa: E402
+from text_sanitize import sanitize_transcript_row 
 
 _OUTPUT_DIR = _DATASET_DIR / "outputs"
 

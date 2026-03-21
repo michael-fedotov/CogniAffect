@@ -15,6 +15,7 @@ The parent app loads a **scenarios JSON** file; scripts here turn raw CSV export
 | **`text_sanitize.py`** | Shared **deterministic** cleanup: Unicode NFKC, HTML entities, common mojibake fixes; keeps Latin accents. Used by the build and export scripts. |
 | **`build_transcript_set.py`** | Selects **one row per conversation** (final listener turn), **sanitizes** fields, applies quality filters, **stratified** random sample to **N** dialogs (default 64), writes CSV + build log. |
 | **`export_scenarios_from_shortlist.py`** | Converts the transcript CSV into **CogniAffect-style scenarios JSON** (context + responses A/B/C + labels). |
+| **`generate_llm_candidate_responses.py`** | Fills response **B** (cognitive) and **C** (affective) using **`prompts.py`** templates and the OpenAI API. Joins scenarios to **`full_dataset_rows.csv`** by `source_row_index` → `index`; builds the model-facing transcript with **`format_context`** so it matches the scenario JSON **`context`** field (Client:/Therapist:). |
 | **`outputs/`** | **Generated artifacts** (safe to regenerate; see below). |
 
 ---
@@ -26,6 +27,7 @@ The parent app loads a **scenarios JSON** file; scripts here turn raw CSV export
 | **`transcript_set.csv`** | Final sampled rows: one **unique `dialog_id` per row**; columns match the source export (see [CSV columns](#csv-column-reference)). |
 | **`transcript_set_build.log`** | Human-readable **run report**: counts, random seed, per-dialog collapse notes, and **excluded** dialogs with reasons. |
 | **`scenarios_transcript_set.json`** | **App-ready** bundle produced from `transcript_set.csv`. |
+| **`scenarios_transcript_set_with_llm_candidates.json`** | Same shape as a scenarios file after **`fill_llm_responses_openai.py`** replaces B/C placeholders with model output. |
 
 Regenerating overwrites these files. Keep a copy elsewhere if you need to freeze a specific version.
 
@@ -50,11 +52,25 @@ Produces:
 
 Use `python3` instead of `python` if that is what your system uses.
 
+### Fill LLM responses B and C (OpenAI)
+
+When you have a scenarios JSON whose B/C fields are still placeholders (for example `outputs/dataset_to_use_4.json`), generate cognitive and affective replies from the prompts in **`prompts.py`** at the repository root:
+
+```bash
+pip install openai   # once
+export OPENAI_API_KEY=sk-...   # or add OPENAI_API_KEY to `.env` at the repo root
+python dataset_generation/generate_llm_candidate_responses.py
+```
+
+Defaults: reads **`dataset_generation/outputs/scenarios_transcript_set_with_llm_candidates.json`**, joins each scenario to **`dataset_generation/full_dataset_rows.csv`** on **`source_row_index`** (must match column **`index`**), uses model **`gpt-5`**, writes **`dataset_generation/outputs/scenarios_transcript_set_with_llm_candidates.json`**. Override paths with `--input`, `--csv`, and `--output`. Use `--dry-run` to call the API for the first scenario only.
+
+API errors **fail the run** (no partial file with mixed real and placeholder B/C). Requires network access to OpenAI.
+
 ### Using the scenarios in CogniAffect
 
 - The Flask app serves **`scenarios.json`** from the project root by default.
 - To use a generated set: **upload** `outputs/scenarios_transcript_set.json`, or **copy** it to **`scenarios.json`** at the project root.
-- Replace the placeholder strings for responses **B** and **C** with your LLM outputs before running a real study (placeholders are marked in JSON).
+- Run **`generate_llm_candidate_responses.py`** (above) so that placeholder strings for responses **B** and **C** are replaced.
 
 ---
 
@@ -214,5 +230,6 @@ Some sources may still touch on difficult themes. Use your **IRB** and study pro
 
 - **Python 3.9+**
 - **Core pipeline** (`build_transcript_set.py`, `export_scenarios_from_shortlist.py`, `text_sanitize.py`): standard library only.
+- **`fill_llm_responses_openai.py`**: install **`openai`**, set **`OPENAI_API_KEY`**, and keep **`prompts.py`** at the repository root (imported by the script).
 
 If you change file names or paths, pass explicit `--input` / `--output` / `--log` arguments so the scripts stay in sync.
