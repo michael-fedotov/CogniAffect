@@ -10,9 +10,10 @@ The parent app loads a **scenarios JSON** file; scripts here turn raw CSV export
 
 | Path | Role |
 |------|------|
-| **`all_rows.csv`** | Main **source pool**: many rows per conversation; includes `counsel_chat` and Reddit (`RED`) dialogs. Used as the default input to `build_transcript_set.py`. |
+| **`full_dataset_rows.csv`** | Main **source pool** (default `--input`): many rows per conversation; includes `counsel_chat` and Reddit (`RED`) dialogs. |
 | **`shortlist_theraputic.csv`** | Smaller subset of the same schema (useful for quick tests or debugging the pipeline without reprocessing the full pool). |
-| **`build_transcript_set.py`** | Selects **one row per conversation** (final listener turn), applies quality filters, **stratified** random sample to **N** dialogs (default 64), writes CSV + build log. |
+| **`text_sanitize.py`** | Shared **deterministic** cleanup: Unicode NFKC, HTML entities, common mojibake fixes; keeps Latin accents. Used by the build and export scripts. |
+| **`build_transcript_set.py`** | Selects **one row per conversation** (final listener turn), **sanitizes** fields, applies quality filters, **stratified** random sample to **N** dialogs (default 64), writes CSV + build log. |
 | **`export_scenarios_from_shortlist.py`** | Converts the transcript CSV into **CogniAffect-style scenarios JSON** (context + responses A/B/C + labels). |
 | **`outputs/`** | **Generated artifacts** (safe to regenerate; see below). |
 
@@ -24,7 +25,7 @@ The parent app loads a **scenarios JSON** file; scripts here turn raw CSV export
 |------|-------------|
 | **`transcript_set.csv`** | Final sampled rows: one **unique `dialog_id` per row**; columns match the source export (see [CSV columns](#csv-column-reference)). |
 | **`transcript_set_build.log`** | Human-readable **run report**: counts, random seed, per-dialog collapse notes, and **excluded** dialogs with reasons. |
-| **`scenarios_transcript_set.json`** | **App-ready** bundle: `scenarios` array, each with `context`, three `responses`, and `ground_truth_labels` (A = human, B/C = LLM placeholders until you fill them). |
+| **`scenarios_transcript_set.json`** | **App-ready** bundle produced from `transcript_set.csv`. |
 
 Regenerating overwrites these files. Keep a copy elsewhere if you need to freeze a specific version.
 
@@ -32,23 +33,42 @@ Regenerating overwrites these files. Keep a copy elsewhere if you need to freeze
 
 ## End-to-end pipeline
 
-From the **repository root** (or `cd dataset_generation` and run the same commands without the `dataset_generation/` prefix):
+All commands below assume the **repository root** (the directory that contains `dataset_generation/` and `pyproject.toml`).
+
+Build the transcript CSV (default input: `full_dataset_rows.csv`), then export scenarios JSON:
 
 ```bash
 python dataset_generation/build_transcript_set.py
 python dataset_generation/export_scenarios_from_shortlist.py
 ```
 
-Typical order:
+Produces:
 
-1. **`build_transcript_set.py`** reads `all_rows.csv` (by default), writes `outputs/transcript_set.csv` and `outputs/transcript_set_build.log`.
-2. **`export_scenarios_from_shortlist.py`** reads `outputs/transcript_set.csv`, writes `outputs/scenarios_transcript_set.json`.
+- `dataset_generation/outputs/transcript_set.csv`
+- `dataset_generation/outputs/transcript_set_build.log`
+- `dataset_generation/outputs/scenarios_transcript_set.json`
+
+Use `python3` instead of `python` if that is what your system uses.
 
 ### Using the scenarios in CogniAffect
 
 - The Flask app serves **`scenarios.json`** from the project root by default.
-- To use this generated set: **upload** `outputs/scenarios_transcript_set.json` in the annotator UI, or **copy/rename** it to `scenarios.json` at the project root for the default load.
+- To use a generated set: **upload** `outputs/scenarios_transcript_set.json`, or **copy** it to **`scenarios.json`** at the project root.
 - Replace the placeholder strings for responses **B** and **C** with your LLM outputs before running a real study (placeholders are marked in JSON).
+
+---
+
+## Text sanitization (`text_sanitize.py`)
+
+Before quality checks and in the export step, string fields are passed through **`sanitize_transcript_row`** (or equivalent):
+
+- **`unicodedata.normalize("NFKC", ...)`** — canonical Unicode.
+- **`html.unescape`** — decodes `&gt;`, `&amp;`, etc.
+- **Mojibake replacements** — common sequences such as `‚Äô` → `'`, `¬†` → space (see source for the full table).
+- **Control characters** — removed except newlines/tabs where needed for multiline dialog fields.
+- **Whitespace** — single-line fields collapsed to single spaces; multiline dialog fields keep paragraph breaks.
+
+Accented Latin letters (e.g. é, ñ) are **preserved**; this is not ASCII-only stripping.
 
 ---
 
@@ -63,18 +83,24 @@ The source CSV has **multiple rows per `dialog_id`** (sequential listener turns 
 
 That implements the study design: the **last human listener response** in the transcript is the ground-truth reply to compare against LLM candidates.
 
-### 2. Quality filters
+### 2. Sanitize, then quality filters
+
+After collapse, each row is **sanitized** (see above). Filters use **sanitized** text and measure context lengths **after** stripping XML-like tags for length checks.
 
 Each collapsed row must pass:
 
 - **`mi_adherent`** treated as adherent (e.g. `1`).
-- Minimum **stripped length** (tags removed for measurement) for:
-  - `prior_dialog`
-  - `prior_speaker_turn`
-  - listener `text`
-- Trivial **closings** (e.g. very short “Take care.”) are dropped.
+- Minimum **character length** for listener `text` (default **50**).
+- Minimum **word count** for listener `text` (default **15** words, whitespace-split).
+- Minimum **stripped length** (tags removed) for `prior_dialog` and `prior_speaker_turn`.
+- Trivial **closings** (e.g. “Take care.”) when very short.
+- Trivial **agreements** (e.g. “I agree.”, “Yeah.”) when the reply has at most **5** words and matches a small blocklist.
 
-### 3. Stratified random sample
+### 3. Sensitive content 
+
+By default, the build applies a **conservative** pass aimed at keeping the sampled set appropriate for annotation and IRB review. **Generally sensitive material is excluded** from the response set; this does not replace protocol-level review or content warnings for annotators.
+
+### 4. Stratified random sample
 
 From the eligible pool, the script samples **`--n`** rows (default **64**) with **proportional allocation** between:
 
@@ -83,20 +109,22 @@ From the eligible pool, the script samples **`--n`** rows (default **64**) with 
 
 A fixed RNG **`--seed`** (default **42**) makes the draw **reproducible**. Change the seed to obtain a different random subset of the same size (subject to eligibility).
 
-### 4. CLI reference (`build_transcript_set.py`)
+### 5. CLI reference (`build_transcript_set.py`)
 
 | Argument | Default | Meaning |
 |----------|---------|---------|
-| `--input` | `all_rows.csv` (next to this script) | Source CSV path. |
+| `--input` | `full_dataset_rows.csv` (next to this script) | Source CSV path. |
 | `--output` | `outputs/transcript_set.csv` | Written shortlist CSV. |
 | `--log` | `outputs/transcript_set_build.log` | Build/exclusion log. |
 | `--n` | `64` | Number of conversations to sample. |
 | `--seed` | `42` | Random seed for stratified sampling. |
+| `--no-content-filter` | off | If set, disables the optional sensitive-content exclusion pass. |
 | `--min-prior-dialog` | `100` | Min length (after tag strip) for `prior_dialog`. |
 | `--min-prior-speaker` | `50` | Min length for `prior_speaker_turn`. |
-| `--min-text` | `25` | Min length for listener `text`. |
+| `--min-text` | `50` | Min character length for listener `text` (after sanitization). |
+| `--min-text-words` | `15` | Min word count for listener `text`. |
 
-If fewer than `--n` rows are eligible after filtering, the script exits with an error (relax thresholds or use a larger `--input` pool).
+If fewer than `--n` rows are eligible after filtering, the script exits with an error (relax `--min-text` / `--min-text-words` or use a larger `--input` pool).
 
 ---
 
@@ -132,7 +160,7 @@ The log is plain text. Top section:
 Then:
 
 - **`=== Collapse (multi-row dialogs) ===`** — dialogs where multiple CSV rows were merged; shows chosen `turn` and file index.
-- **`=== Excluded after collapse (reason) ===`** — `dialog_id` and a short reason (e.g. `prior_dialog too short`, `trivial closing`).
+- **`=== Excluded after collapse (reason) ===`** — `dialog_id` and a short reason (e.g. `prior_dialog too short`, `text too few words`, `trivial closing`, `trivial agreement`, sensitive-content exclusions when that pass is enabled).
 
 Use this file to audit **what was removed** and to **reproduce** a run (same `--input`, `--seed`, and filter flags → same `transcript_set.csv`).
 
@@ -178,12 +206,13 @@ Each scenario includes:
 
 ## Ethics and content note
 
-Some Reddit-sourced threads may touch on **suicide, self-harm, abuse, or severe distress**. Use your **IRB** and study protocol to decide inclusion, and to give annotators appropriate content warnings. This pipeline does **not** replace policy review; it only filters on length, MI-adherence, and trivial closings.
+Some sources may still touch on difficult themes. Use your **IRB** and study protocol for inclusion decisions and **content warnings** for annotators. Automated steps here (length, MI adherence, trivial phrasing, and a **broad exclusion of generally sensitive material** from the sampled set) are helpers only and **do not** replace ethics or policy review.
 
 ---
 
 ## Requirements
 
-- **Python 3.9+** with the standard library only (no extra packages for these scripts).
+- **Python 3.9+**
+- **Core pipeline** (`build_transcript_set.py`, `export_scenarios_from_shortlist.py`, `text_sanitize.py`): standard library only.
 
-If you change file names or paths, pass explicit `--input` / `--output` / `--log` arguments so the two scripts stay in sync.
+If you change file names or paths, pass explicit `--input` / `--output` / `--log` arguments so the scripts stay in sync.
