@@ -27,6 +27,15 @@ export function loadFromLocalStorage(annotatorId) {
   }
 }
 
+export function clearLocalSession(annotatorId) {
+  if (!annotatorId) return;
+  try {
+    localStorage.removeItem(`${SESSION_PREFIX}${annotatorId}`);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function findExistingSessions() {
   const sessions = [];
   try {

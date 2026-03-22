@@ -16,7 +16,6 @@ export async function syncToServer(state, { onWakingUp } = {}) {
             current_scenario_index: state.currentScenarioIndex,
             saved_at: Date.now(),
           },
-          scenarios: state.scenarios,
         }),
       },
       { onWakingUp },
@@ -46,5 +45,20 @@ export async function loadSessionFromServer(annotatorId, { onWakingUp } = {}) {
     };
   } catch {
     return null;
+  }
+}
+
+/** Removes server-side resume blob only; does not delete annotation rows. */
+export async function deleteSessionFromServer(annotatorId, { onWakingUp } = {}) {
+  if (!annotatorId) return false;
+  try {
+    const res = await fetchWithWakeup(
+      `/api/session/${encodeURIComponent(annotatorId)}`,
+      { method: 'DELETE' },
+      { onWakingUp },
+    );
+    return res.ok;
+  } catch {
+    return false;
   }
 }
