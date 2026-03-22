@@ -17,12 +17,13 @@ import csv
 import io
 import os
 import argparse
+import hashlib
 from collections import defaultdict
 from datetime import datetime, timezone
 
 import psycopg2
 from dotenv import load_dotenv
-from psycopg2.extras import RealDictCursor
+from psycopg2.extras import RealDictCursor, Json
 from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
 
@@ -144,13 +145,178 @@ def init_db():
                 UNIQUE(judge_model, scenario_id)
             )
         """,
+        """
+            CREATE TABLE IF NOT EXISTS active_scenario_config (
+                id INTEGER PRIMARY KEY DEFAULT 1,
+                CONSTRAINT active_scenario_config_singleton CHECK (id = 1),
+                payload JSONB,
+                content_hash TEXT,
+                label TEXT DEFAULT '',
+                updated_at TEXT DEFAULT (CURRENT_TIMESTAMP::text)
+            )
+        """,
     ]
     with get_db() as conn:
         for stmt in ddl:
             conn.execute(stmt)
+        conn.execute(
+            """
+            INSERT INTO active_scenario_config (id) VALUES (1)
+            ON CONFLICT (id) DO NOTHING
+            """
+        )
+        conn.commit()
 
 
 init_db()
+
+
+# ── Canonical scenarios (DB + optional repo file seed) ──────────────────────
+
+
+def _load_repo_scenarios_file():
+    path = os.path.join(BASE_DIR, "scenarios.json")
+    if not os.path.isfile(path):
+        return None
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def validate_scenarios_document(data):
+    """Return a list of error strings; empty if valid."""
+    errors = []
+    if not isinstance(data, dict):
+        return ["Root value must be a JSON object"]
+    scenarios = data.get("scenarios")
+    if not isinstance(scenarios, list) or len(scenarios) < 1:
+        errors.append('Missing or empty "scenarios" array')
+        return errors
+    seen_ids = set()
+    for i, s in enumerate(scenarios):
+        pref = f"scenarios[{i}]"
+        if not isinstance(s, dict):
+            errors.append(f"{pref} must be an object")
+            continue
+        sid = s.get("scenario_id")
+        if not sid or not isinstance(sid, str) or not sid.strip():
+            errors.append(f"{pref}: scenario_id must be a non-empty string")
+        else:
+            sid = sid.strip()
+            if sid in seen_ids:
+                errors.append(f"Duplicate scenario_id: {sid!r}")
+            else:
+                seen_ids.add(sid)
+        ctx = s.get("context")
+        if not isinstance(ctx, str):
+            errors.append(f"{pref}: context must be a string")
+        responses = s.get("responses")
+        if not isinstance(responses, list) or len(responses) != 3:
+            errors.append(f"{pref}: responses must be an array of length 3")
+        else:
+            letters = []
+            for j, r in enumerate(responses):
+                if not isinstance(r, dict):
+                    errors.append(f"{pref}.responses[{j}] must be an object")
+                    continue
+                rid = r.get("response_id")
+                if rid not in ("A", "B", "C"):
+                    errors.append(
+                        f"{pref}.responses[{j}]: response_id must be A, B, or C"
+                    )
+                else:
+                    letters.append(rid)
+                if "text" not in r or not isinstance(r.get("text"), str):
+                    errors.append(f"{pref}.responses[{j}]: text must be a string")
+            if sorted(letters) != ["A", "B", "C"]:
+                errors.append(f"{pref}: responses must include A, B, and C exactly once")
+        gt = s.get("ground_truth_labels")
+        if not isinstance(gt, dict):
+            errors.append(f"{pref}: ground_truth_labels must be an object")
+        else:
+            for L in ("A", "B", "C"):
+                if L not in gt:
+                    errors.append(f"{pref}: ground_truth_labels missing key {L!r}")
+                elif not isinstance(gt[L], str) or not str(gt[L]).strip():
+                    errors.append(
+                        f"{pref}: ground_truth_labels[{L!r}] must be a non-empty string"
+                    )
+    return errors
+
+
+def _hash_scenarios_payload(data):
+    """Stable hash for the scenarios array only."""
+    blob = json.dumps(data["scenarios"], sort_keys=True, ensure_ascii=False)
+    return hashlib.sha256(blob.encode("utf-8")).hexdigest()[:16]
+
+
+def _seed_scenarios_from_repo_file_if_empty():
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT payload FROM active_scenario_config WHERE id = 1"
+        ).fetchone()
+        if row and row["payload"] is not None:
+            return
+        disk = _load_repo_scenarios_file()
+        if not disk:
+            return
+        errs = validate_scenarios_document(disk)
+        if errs:
+            return
+        h = _hash_scenarios_payload(disk)
+        now = datetime.now(timezone.utc).isoformat()
+        conn.execute(
+            """
+            UPDATE active_scenario_config SET
+                payload = %s,
+                content_hash = %s,
+                label = %s,
+                updated_at = %s
+            WHERE id = 1
+            """,
+            (Json(disk), h, "seeded from repo scenarios.json", now),
+        )
+        conn.commit()
+
+
+_seed_scenarios_from_repo_file_if_empty()
+
+
+def get_active_scenario_document():
+    """Return the full scenario document dict, or None if unset."""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT payload FROM active_scenario_config WHERE id = 1"
+        ).fetchone()
+    if not row or row["payload"] is None:
+        return None
+    p = row["payload"]
+    return p if isinstance(p, dict) else json.loads(p)
+
+
+def get_canonical_scenarios_list():
+    """Ordered list of scenario dicts for sync and labeling; None if not configured."""
+    doc = get_active_scenario_document()
+    if not doc:
+        return None
+    scenarios = doc.get("scenarios")
+    if not isinstance(scenarios, list):
+        return None
+    return scenarios
+
+
+def _admin_auth_error():
+    secret = (os.environ.get("ADMIN_SECRET") or "").strip()
+    if not secret:
+        return "ADMIN_SECRET is not set on the server", 503
+    auth = request.headers.get("Authorization") or ""
+    token = ""
+    if auth.lower().startswith("bearer "):
+        token = auth[7:].strip()
+    if not token:
+        token = (request.headers.get("X-Admin-Key") or "").strip()
+    if token != secret:
+        return "Unauthorized", 401
+    return None
 
 # ── Static files ──────────────────────────────────────────────────────────────
 
@@ -175,7 +341,119 @@ def vite_assets(filename):
 
 @app.route("/scenarios.json")
 def scenarios_json():
-    return send_from_directory(BASE_DIR, "scenarios.json")
+    doc = get_active_scenario_document()
+    if doc is not None:
+        return jsonify(doc)
+    disk = _load_repo_scenarios_file()
+    if disk is not None:
+        return jsonify(disk)
+    return jsonify({"error": "No scenario set configured"}), 404
+
+
+@app.route("/api/scenarios", methods=["GET"])
+def api_scenarios():
+    doc = get_active_scenario_document()
+    if doc is not None:
+        return jsonify(doc)
+    disk = _load_repo_scenarios_file()
+    if disk is not None:
+        return jsonify(disk)
+    return jsonify({"error": "No scenario set configured"}), 404
+
+
+@app.route("/api/admin/scenarios", methods=["GET"])
+def admin_get_scenarios():
+    err = _admin_auth_error()
+    if err:
+        msg, code = err
+        return jsonify({"error": msg}), code
+    full = (request.args.get("full") or "").strip() in ("1", "true", "yes")
+    with get_db() as conn:
+        row = conn.execute(
+            """
+            SELECT payload, content_hash, label, updated_at
+            FROM active_scenario_config WHERE id = 1
+            """
+        ).fetchone()
+    if not row:
+        return jsonify({"error": "Config row missing"}), 500
+    payload = row["payload"]
+    if payload is None:
+        out = {
+            "has_payload": False,
+            "scenario_count": 0,
+            "scenario_ids": [],
+            "content_hash": row["content_hash"],
+            "label": row["label"],
+            "updated_at": row["updated_at"],
+        }
+        return jsonify(out)
+    doc = payload if isinstance(payload, dict) else json.loads(payload)
+    scenarios = doc.get("scenarios") or []
+    ids = [s.get("scenario_id") for s in scenarios if isinstance(s, dict)]
+    out = {
+        "has_payload": True,
+        "scenario_count": len(scenarios),
+        "scenario_ids": ids,
+        "content_hash": row["content_hash"],
+        "label": row["label"],
+        "updated_at": row["updated_at"],
+    }
+    if full:
+        out["payload"] = doc
+    return jsonify(out)
+
+
+@app.route("/api/admin/scenarios", methods=["POST"])
+def admin_post_scenarios():
+    err = _admin_auth_error()
+    if err:
+        msg, code = err
+        return jsonify({"error": msg}), code
+    data = request.get_json(force=True)
+    if not data or not isinstance(data, dict):
+        return jsonify({"error": "JSON body required"}), 400
+    if not data.get("confirm"):
+        return jsonify(
+            {
+                "error": "Missing confirm: true — replacing the scenario set is destructive for analysis. "
+                "Read the warnings and submit again with confirm: true."
+            }
+        ), 400
+    label = (data.get("label") or "").strip() or None
+    # Allow { "confirm", "label", "scenarios": [...], ... } or nested only
+    payload = {k: v for k, v in data.items() if k not in ("confirm", "label")}
+    if "scenarios" not in payload:
+        return jsonify({"error": 'Body must include a "scenarios" array (and confirm: true)'}), 400
+    errs = validate_scenarios_document(payload)
+    if errs:
+        return jsonify({"error": "Validation failed", "details": errs[:30]}), 400
+    h = _hash_scenarios_payload(payload)
+    now = datetime.now(timezone.utc).isoformat()
+    with get_db() as conn:
+        conn.execute(
+            """
+            UPDATE active_scenario_config SET
+                payload = %s,
+                content_hash = %s,
+                label = COALESCE(%s, label),
+                updated_at = %s
+            WHERE id = 1
+            """,
+            (Json(payload), h, label, now),
+        )
+        conn.commit()
+    n = len(payload["scenarios"])
+    ids = [s["scenario_id"] for s in payload["scenarios"]]
+    return jsonify(
+        {
+            "status": "ok",
+            "scenario_count": n,
+            "scenario_ids": ids,
+            "content_hash": h,
+            "updated_at": now,
+        }
+    )
 
 
 # ── Session API ───────────────────────────────────────────────────────────────
@@ -205,7 +483,11 @@ def sync():
 
     annotator_id = data["annotator_id"]
     session_data = data.get("session_data", {})
-    scenarios_list = data.get("scenarios", [])
+    scenarios_list = get_canonical_scenarios_list()
+    if scenarios_list is None:
+        return jsonify(
+            {"error": "No scenario set is configured on the server. Contact an administrator."}
+        ), 503
 
     scenarios_map = {s["scenario_id"]: s for s in scenarios_list}
     now = datetime.now(timezone.utc).isoformat()
@@ -227,7 +509,14 @@ def sync():
         original_ids = ["A", "B", "C"]
 
         for scenario_id, ann in annotations.items():
-            scenario = scenarios_map.get(scenario_id, {})
+            if scenario_id not in scenarios_map:
+                return jsonify(
+                    {
+                        "error": "scenario_id is not in the active scenario set",
+                        "scenario_id": scenario_id,
+                    }
+                ), 400
+            scenario = scenarios_map[scenario_id]
 
             # Compute annotation_id using scenario's position in the ordered list
             idx = next(
@@ -373,14 +662,18 @@ def list_annotators():
 
 @app.route("/api/status")
 def status():
+    # RealDictCursor returns dict rows — use aliases, not fetchone()[0]
     with get_db() as conn:
-        total = conn.execute("SELECT COUNT(*) FROM annotations").fetchone()[0]
+        total = conn.execute("SELECT COUNT(*) AS n FROM annotations").fetchone()
         complete = conn.execute(
-            "SELECT COUNT(*) FROM annotations WHERE is_complete = 1"
-        ).fetchone()[0]
+            "SELECT COUNT(*) AS n FROM annotations WHERE is_complete = 1"
+        ).fetchone()
         annotators = conn.execute(
-            "SELECT COUNT(DISTINCT annotator_id) FROM annotations"
-        ).fetchone()[0]
+            "SELECT COUNT(DISTINCT annotator_id) AS n FROM annotations"
+        ).fetchone()
+    total = total["n"] if total else 0
+    complete = complete["n"] if complete else 0
+    annotators = annotators["n"] if annotators else 0
     return jsonify(
         {
             "total_annotations": total,
@@ -847,6 +1140,46 @@ def admin():
 
     <div id="panel-human" class="tab-panel">
 
+    <!-- Scenario set (admin upload) -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+      <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">Active scenario set</h2>
+      <p class="text-sm text-slate-600 mb-3">This JSON is served to annotators at <code class="bg-slate-100 px-1 rounded text-xs">/api/scenarios</code>. Set <code class="bg-slate-100 px-1 rounded text-xs">ADMIN_SECRET</code> in the server environment; paste it here to manage uploads.</p>
+      <div class="flex flex-wrap items-end gap-3 mb-4">
+        <div class="flex-1 min-w-[200px]">
+          <label class="text-xs font-semibold text-slate-600 block mb-1">Admin secret</label>
+          <input type="password" id="admin-secret-input" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono" placeholder="Same as ADMIN_SECRET" autocomplete="off" />
+        </div>
+        <button type="button" onclick="loadScenarioSummary()"
+          class="inline-flex items-center gap-2 bg-slate-700 text-white px-4 py-2 rounded-xl font-semibold text-sm hover:bg-slate-800">Load current</button>
+      </div>
+      <div id="scenario-admin-summary" class="text-sm text-slate-600 mb-4 min-h-[3rem]"></div>
+      <div class="flex flex-wrap items-end gap-3">
+        <input type="file" id="scenario-json-file" accept=".json,application/json" class="text-sm block" />
+        <button type="button" onclick="openScenarioUploadModal()"
+          class="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl font-semibold text-sm hover:bg-indigo-700">Review &amp; upload…</button>
+      </div>
+      <p id="scenario-upload-msg" class="text-sm mt-3 min-h-[1.25rem]"></p>
+    </div>
+
+    <div id="scenario-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40">
+      <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 border border-slate-200 max-h-[90vh] overflow-y-auto">
+        <h3 class="text-lg font-bold text-slate-800 mb-2">Replace scenario set?</h3>
+        <ul class="text-sm text-slate-600 list-disc pl-5 space-y-2 mb-4">
+          <li>Existing annotation rows are <strong>not</strong> deleted, but mixed scenario sets can make aggregate scores misleading.</li>
+          <li>Annotators with in-progress sessions may see sync errors until they start fresh if scenario IDs no longer match.</li>
+        </ul>
+        <div id="scenario-modal-preview" class="bg-slate-50 rounded-xl p-3 text-xs font-mono text-slate-700 mb-4 max-h-32 overflow-y-auto whitespace-pre-wrap"></div>
+        <label class="flex items-start gap-2 text-sm text-slate-700 mb-4">
+          <input type="checkbox" id="scenario-modal-confirm" class="mt-1" />
+          <span>I understand that replacing the scenario set can affect ongoing annotation work.</span>
+        </label>
+        <div class="flex gap-2 justify-end">
+          <button type="button" onclick="closeScenarioModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50">Cancel</button>
+          <button type="button" onclick="confirmScenarioUpload()" class="px-4 py-2 rounded-xl bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700">Upload</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Status overview -->
     <div id="status-card" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
       <div class="animate-pulse h-20 bg-slate-100 rounded-xl"></div>
@@ -1197,6 +1530,112 @@ def admin():
     function escapeHtml(s) {
       if (!s) return '';
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    var pendingScenarioPayload = null;
+    try {
+      var _sec = sessionStorage.getItem('bws_admin_secret');
+      if (_sec) document.getElementById('admin-secret-input').value = _sec;
+    } catch (e) {}
+
+    function loadScenarioSummary() {
+      var inp = document.getElementById('admin-secret-input');
+      var secret = inp.value.trim();
+      if (secret) { try { sessionStorage.setItem('bws_admin_secret', secret); } catch (e) {} }
+      var box = document.getElementById('scenario-admin-summary');
+      box.innerHTML = 'Loading…';
+      fetch('/api/admin/scenarios', { headers: { 'Authorization': 'Bearer ' + secret } })
+        .then(function(r) { return r.json().then(function(j) { return { ok: r.ok, j: j }; }); })
+        .then(function(res) {
+          if (!res.ok) {
+            box.innerHTML = '<p class="text-red-600">' + escapeHtml(res.j.error || JSON.stringify(res.j)) + '</p>';
+            return;
+          }
+          var j = res.j;
+          if (!j.has_payload) {
+            box.innerHTML = '<p class="text-slate-600">No scenario set stored in the database yet. Upload a JSON file below, or add <code class="bg-slate-100 px-1 rounded text-xs">scenarios.json</code> at the repo root so the server can seed on startup.</p>';
+            return;
+          }
+          var ids = (j.scenario_ids || []).slice(0, 12);
+          var more = (j.scenario_ids || []).length > 12 ? ' (+ ' + ((j.scenario_ids || []).length - 12) + ' more)' : '';
+          box.innerHTML = '<p class="text-slate-800"><strong>' + j.scenario_count + '</strong> scenarios &middot; hash <code class="bg-slate-100 px-1 rounded">' + escapeHtml(j.content_hash || '') + '</code></p>' +
+            '<p class="text-xs text-slate-500 mt-1">Updated: ' + escapeHtml(j.updated_at || '') + (j.label ? ' &middot; ' + escapeHtml(j.label) : '') + '</p>' +
+            '<p class="text-xs font-mono mt-2 break-all">' + escapeHtml(ids.join(', ')) + escapeHtml(more) + '</p>';
+        }).catch(function() {
+          box.innerHTML = '<p class="text-red-600">Request failed.</p>';
+        });
+    }
+
+    function openScenarioUploadModal() {
+      var fileInput = document.getElementById('scenario-json-file');
+      if (!fileInput.files || !fileInput.files[0]) {
+        alert('Choose a JSON file first.');
+        return;
+      }
+      var secret = document.getElementById('admin-secret-input').value.trim();
+      if (!secret) {
+        alert('Enter the admin secret first.');
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        try {
+          var obj = JSON.parse(ev.target.result);
+          if (!obj.scenarios || !Array.isArray(obj.scenarios)) throw new Error('Missing scenarios array');
+          pendingScenarioPayload = obj;
+          var ids = obj.scenarios.map(function(s) { return s.scenario_id; }).filter(Boolean).slice(0, 24);
+          document.getElementById('scenario-modal-preview').textContent =
+            'Scenarios: ' + obj.scenarios.length + '\\nIDs (first 24): ' + ids.join(', ');
+          document.getElementById('scenario-modal-confirm').checked = false;
+          document.getElementById('scenario-modal').classList.remove('hidden');
+        } catch (e) {
+          alert('Invalid JSON: ' + e.message);
+        }
+      };
+      reader.readAsText(fileInput.files[0], 'UTF-8');
+    }
+
+    function closeScenarioModal() {
+      document.getElementById('scenario-modal').classList.add('hidden');
+      pendingScenarioPayload = null;
+    }
+
+    function confirmScenarioUpload() {
+      if (!document.getElementById('scenario-modal-confirm').checked) {
+        alert('Confirm the checkbox to proceed.');
+        return;
+      }
+      if (!pendingScenarioPayload) return;
+      var secret = document.getElementById('admin-secret-input').value.trim();
+      var msg = document.getElementById('scenario-upload-msg');
+      msg.textContent = 'Uploading…';
+      var body = JSON.parse(JSON.stringify(pendingScenarioPayload));
+      body.confirm = true;
+      fetch('/api/admin/scenarios', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + secret
+        },
+        body: JSON.stringify(body)
+      }).then(function(r) { return r.json().then(function(j) { return { ok: r.ok, j: j }; }); })
+        .then(function(res) {
+          closeScenarioModal();
+          if (!res.ok) {
+            msg.className = 'text-sm mt-3 text-red-600';
+            var t = res.j.error || JSON.stringify(res.j);
+            if (res.j.details && res.j.details.length) t += ' — ' + res.j.details.slice(0, 5).join('; ');
+            msg.textContent = t;
+            return;
+          }
+          msg.className = 'text-sm mt-3 text-emerald-700';
+          msg.textContent = 'Saved ' + res.j.scenario_count + ' scenarios (hash ' + res.j.content_hash + ').';
+          loadScenarioSummary();
+        }).catch(function() {
+          closeScenarioModal();
+          msg.className = 'text-sm mt-3 text-red-600';
+          msg.textContent = 'Upload failed.';
+        });
     }
 
     function deleteLlmModel(model) {
