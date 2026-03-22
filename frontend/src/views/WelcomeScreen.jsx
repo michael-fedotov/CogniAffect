@@ -274,7 +274,7 @@ export function WelcomeScreen({ dispatch }) {
                     {scenarios.scenarios.length !== 1 ? 's' : ''} ready
                   </p>
                 </div>
-                {import.meta.env.DEV && (
+                {/* {import.meta.env.DEV && (
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
@@ -282,7 +282,7 @@ export function WelcomeScreen({ dispatch }) {
                   >
                     Replace (dev)
                   </button>
-                )}
+                )} */}
               </div>
             ) : (
               <div className="space-y-2">
