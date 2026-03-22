@@ -7,6 +7,8 @@ import {
 } from '../utils/storage/localSessionStorage';
 import { loadSessionFromServer } from '../utils/api/annotationApi';
 import { ACTION_TYPES } from '../state/annotationActionTypes';
+import { apiUrl } from '../utils/constants/api';
+import { fetchWithWakeup } from '../utils/api/client';
 
 export function WelcomeScreen({ dispatch }) {
   const [annotatorId, setAnnotatorId] = useState('');
@@ -22,16 +24,40 @@ export function WelcomeScreen({ dispatch }) {
   useEffect(() => {
     setExistingSessions(findExistingSessions());
 
-    fetch('scenarios.json')
-      .then((r) => {
-        if (!r.ok) throw new Error('Not found');
-        return r.json();
-      })
-      .then((data) => {
-        setScenarios(data);
-        setLoadingAuto(false);
-      })
-      .catch(() => setLoadingAuto(false));
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetchWithWakeup(apiUrl('/api/scenarios'));
+        if (cancelled) return;
+        if (res.ok) {
+          const data = await res.json();
+          if (data.scenarios && Array.isArray(data.scenarios)) {
+            setScenarios(data);
+            setLoadingAuto(false);
+            return;
+          }
+        }
+      } catch {
+        /* fall through */
+      }
+      if (import.meta.env.DEV) {
+        try {
+          const r = await fetch('scenarios.json');
+          if (!cancelled && r.ok) {
+            const data = await r.json();
+            if (data.scenarios && Array.isArray(data.scenarios)) {
+              setScenarios(data);
+            }
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+      if (!cancelled) setLoadingAuto(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   function handleFileUpload(e) {
@@ -56,7 +82,7 @@ export function WelcomeScreen({ dispatch }) {
   async function handleStart(resumeSession) {
     const id = annotatorId.trim() || generateAnnotatorId();
     if (!scenarios) {
-      setLoadError('Please load a scenarios.json file first.');
+      setLoadError('Scenarios could not be loaded. Refresh the page or contact an administrator.');
       return;
     }
     setStarting(true);
@@ -224,7 +250,7 @@ export function WelcomeScreen({ dispatch }) {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                   />
                 </svg>
-                Loading scenarios.json…
+                Loading scenarios…
               </div>
             ) : scenarios ? (
               <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2.5">
@@ -248,12 +274,15 @@ export function WelcomeScreen({ dispatch }) {
                     {scenarios.scenarios.length !== 1 ? 's' : ''} ready
                   </p>
                 </div>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="ml-auto text-xs text-emerald-600 underline hover:text-emerald-700"
-                >
-                  Replace
-                </button>
+                {import.meta.env.DEV && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="ml-auto text-xs text-emerald-600 underline hover:text-emerald-700"
+                  >
+                    Replace (dev)
+                  </button>
+                )}
               </div>
             ) : (
               <div className="space-y-2">
@@ -269,27 +298,36 @@ export function WelcomeScreen({ dispatch }) {
                       clipRule="evenodd"
                     />
                   </svg>
-                  Could not auto-load scenarios.json. Please upload it manually.
+                  Could not load scenarios from the server. Ask an administrator to upload the
+                  scenario set, or try again later.
+                  {import.meta.env.DEV && (
+                    <span className="block mt-1 text-xs text-amber-800">
+                      Dev: you can load a local <code className="bg-amber-100 px-1 rounded">scenarios.json</code> below.
+                    </span>
+                  )}
                 </div>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/40 text-slate-600 text-sm font-medium transition-all"
-                >
-                  <svg
-                    className="w-5 h-5 text-slate-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
+                {import.meta.env.DEV && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/40 text-slate-600 text-sm font-medium transition-all"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-                    />
-                  </svg>
-                  Upload scenarios.json
-                </button>
+                    <svg
+                      className="w-5 h-5 text-slate-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                      />
+                    </svg>
+                    Upload scenarios.json (dev only)
+                  </button>
+                )}
               </div>
             )}
 
