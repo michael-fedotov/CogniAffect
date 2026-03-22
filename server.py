@@ -30,7 +30,29 @@ from flask_cors import CORS
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://michael-fedotov.github.io/CogniAffect/"}})
+# Browser Origin is scheme+host+port (no path). Include GitHub Pages root + common dev servers.
+_CORS_ORIGINS = [
+    "https://michael-fedotov.github.io",
+    "http://localhost:3000",
+    "http://localhost:5000",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5000",
+    "http://127.0.0.1:5173",
+]
+_env_cors = os.environ.get("CORS_ORIGINS", "").strip()
+if _env_cors:
+    _CORS_ORIGINS = [o.strip() for o in _env_cors.split(",") if o.strip()]
+CORS(
+    app,
+    resources={
+        r"/*": {
+            "origins": _CORS_ORIGINS,
+            "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+        }
+    },
+)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -416,7 +438,7 @@ def admin_post_scenarios():
     if not data.get("confirm"):
         return jsonify(
             {
-                "error": "Missing confirm: true — replacing the scenario set is destructive for analysis. "
+                "error": "Missing confirm: true — uploading replaces the scenario set and deletes all annotations. "
                 "Read the warnings and submit again with confirm: true."
             }
         ), 400
@@ -442,6 +464,14 @@ def admin_post_scenarios():
             """,
             (Json(payload), h, label, now),
         )
+        cur_a = conn.execute("DELETE FROM annotations")
+        cur_s = conn.execute("DELETE FROM sessions")
+        cur_l = conn.execute("DELETE FROM llm_annotations")
+        wiped = {
+            "annotations": cur_a.rowcount if cur_a.rowcount >= 0 else 0,
+            "sessions": cur_s.rowcount if cur_s.rowcount >= 0 else 0,
+            "llm_annotations": cur_l.rowcount if cur_l.rowcount >= 0 else 0,
+        }
         conn.commit()
     n = len(payload["scenarios"])
     ids = [s["scenario_id"] for s in payload["scenarios"]]
@@ -452,6 +482,7 @@ def admin_post_scenarios():
             "scenario_ids": ids,
             "content_hash": h,
             "updated_at": now,
+            "wiped": wiped,
         }
     )
 
@@ -953,16 +984,38 @@ def llm_judge_scores():
     return jsonify(payload)
 
 
-@app.route("/api/llm-judge/<path:model>", methods=["DELETE"])
-def llm_judge_delete(model):
-    """Remove all rows for one judge model."""
-    if not model.strip():
-        return jsonify({"error": "Invalid model"}), 400
+def _delete_llm_judge_rows(judge_model: str):
+    """Delete all llm_annotations for judge_model; returns deleted row count."""
+    judge_model = (judge_model or "").strip()
+    if not judge_model:
+        return None, jsonify({"error": "Invalid or empty judge_model"}), 400
     with get_db() as conn:
-        cur = conn.execute("DELETE FROM llm_annotations WHERE judge_model = %s", (model,))
+        cur = conn.execute("DELETE FROM llm_annotations WHERE judge_model = %s", (judge_model,))
         conn.commit()
         deleted = cur.rowcount
-    return jsonify({"status": "ok", "deleted_rows": deleted, "judge_model": model})
+    return deleted, jsonify({"status": "ok", "deleted_rows": deleted, "judge_model": judge_model}), 200
+
+
+@app.route("/api/llm-judge/delete", methods=["POST"])
+def llm_judge_delete_post():
+    """Remove all rows for one judge model (POST body JSON — works when DELETE is blocked by proxies/CORS)."""
+    data = request.get_json(force=True, silent=True) or {}
+    model = (data.get("judge_model") or data.get("model") or "").strip()
+    if not model:
+        return jsonify({"error": "JSON body must include judge_model or model"}), 400
+    deleted, resp, code = _delete_llm_judge_rows(model)
+    if deleted is None:
+        return resp, code
+    return resp
+
+
+@app.route("/api/llm-judge/<path:model>", methods=["DELETE"])
+def llm_judge_delete(model):
+    """Remove all rows for one judge model (DELETE — same as POST /api/llm-judge/delete)."""
+    deleted, resp, code = _delete_llm_judge_rows(model)
+    if deleted is None:
+        return resp, code
+    return resp
 
 
 @app.route("/api/comparison", methods=["GET"])
@@ -1143,7 +1196,7 @@ def admin():
     <!-- Scenario set (admin upload) -->
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
       <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">Active scenario set</h2>
-      <p class="text-sm text-slate-600 mb-3">This JSON is served to annotators at <code class="bg-slate-100 px-1 rounded text-xs">/api/scenarios</code>. Set <code class="bg-slate-100 px-1 rounded text-xs">ADMIN_SECRET</code> in the server environment; paste it here to manage uploads.</p>
+      <p class="text-sm text-slate-600 mb-3">This JSON is served to annotators at <code class="bg-slate-100 px-1 rounded text-xs">/api/scenarios</code>. <strong class="text-slate-800">Each successful upload replaces the active set and permanently deletes all human annotations, saved sessions, and LLM-judge rows</strong> (after you confirm in the dialog). Set <code class="bg-slate-100 px-1 rounded text-xs">ADMIN_SECRET</code> in the server environment; paste it here to manage uploads.</p>
       <div class="flex flex-wrap items-end gap-3 mb-4">
         <div class="flex-1 min-w-[200px]">
           <label class="text-xs font-semibold text-slate-600 block mb-1">Admin secret</label>
@@ -1165,13 +1218,14 @@ def admin():
       <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 border border-slate-200 max-h-[90vh] overflow-y-auto">
         <h3 class="text-lg font-bold text-slate-800 mb-2">Replace scenario set?</h3>
         <ul class="text-sm text-slate-600 list-disc pl-5 space-y-2 mb-4">
-          <li>Existing annotation rows are <strong>not</strong> deleted, but mixed scenario sets can make aggregate scores misleading.</li>
-          <li>Annotators with in-progress sessions may see sync errors until they start fresh if scenario IDs no longer match.</li>
+          <li>All rows in <strong>annotations</strong> (human BWS data) will be <strong>permanently deleted</strong>.</li>
+          <li>All <strong>sessions</strong> (resume state) and all <strong>LLM-as-a-Judge</strong> uploads will be <strong>deleted</strong> too, so nothing mixes with the new scenario set.</li>
+          <li>Download CSV exports first if you need a backup. This cannot be undone from the app.</li>
         </ul>
         <div id="scenario-modal-preview" class="bg-slate-50 rounded-xl p-3 text-xs font-mono text-slate-700 mb-4 max-h-32 overflow-y-auto whitespace-pre-wrap"></div>
         <label class="flex items-start gap-2 text-sm text-slate-700 mb-4">
           <input type="checkbox" id="scenario-modal-confirm" class="mt-1" />
-          <span>I understand that replacing the scenario set can affect ongoing annotation work.</span>
+          <span>I understand this will permanently delete all annotations, sessions, and LLM-judge data.</span>
         </label>
         <div class="flex gap-2 justify-end">
           <button type="button" onclick="closeScenarioModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50">Cancel</button>
@@ -1517,7 +1571,7 @@ def admin():
             html += '<div class="py-2 flex items-center justify-between gap-4">' +
               '<div><p class="font-mono font-semibold text-slate-800 text-sm">' + escapeHtml(m.judge_model) + '</p>' +
               '<p class="text-xs text-slate-500">' + (m.completed_rows || 0) + ' complete / ' + m.total_rows + ' rows</p></div>' +
-              '<button type="button" class="text-xs text-red-600 hover:underline font-medium" onclick="deleteLlmModel(' + JSON.stringify(m.judge_model) + ')">Delete</button></div>';
+              '<button type="button" class="llm-delete-btn text-xs text-red-600 hover:underline font-medium cursor-pointer" data-judge-model="' + escapeAttr(m.judge_model) + '">Delete</button></div>';
           });
           html += '</div>';
         }
@@ -1530,6 +1584,16 @@ def admin():
     function escapeHtml(s) {
       if (!s) return '';
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function escapeAttr(s) {
+      if (s == null) return '';
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
     }
 
     var pendingScenarioPayload = null;
@@ -1629,8 +1693,12 @@ def admin():
             return;
           }
           msg.className = 'text-sm mt-3 text-emerald-700';
-          msg.textContent = 'Saved ' + res.j.scenario_count + ' scenarios (hash ' + res.j.content_hash + ').';
+          var w = res.j.wiped || {};
+          msg.textContent = 'Saved ' + res.j.scenario_count + ' scenarios (hash ' + res.j.content_hash + '). ' +
+            'Removed ' + (w.annotations || 0) + ' annotation rows, ' + (w.sessions || 0) + ' sessions, ' +
+            (w.llm_annotations || 0) + ' LLM-judge rows.';
           loadScenarioSummary();
+          if (typeof loadScores === 'function') loadScores();
         }).catch(function() {
           closeScenarioModal();
           msg.className = 'text-sm mt-3 text-red-600';
@@ -1640,8 +1708,26 @@ def admin():
 
     function deleteLlmModel(model) {
       if (!confirm('Delete all rows for judge model: ' + model + '?')) return;
-      fetch('/api/llm-judge/' + encodeURIComponent(model), { method: 'DELETE' })
-        .then(r => r.json()).then(function() { loadLlmModels(); }).catch(function() { alert('Delete failed'); });
+      // POST avoids DELETE being blocked by some proxies/CDNs; CORS preflight is simpler than DELETE.
+      fetch('/api/llm-judge/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ judge_model: model })
+      })
+        .then(function(r) {
+          return r.json().then(function(j) { return { ok: r.ok, status: r.status, j: j }; });
+        })
+        .then(function(res) {
+          if (!res.ok) {
+            alert(res.j.error || ('Delete failed (' + res.status + ')'));
+            return;
+          }
+          loadLlmModels();
+        })
+        .catch(function(e) {
+          console.error(e);
+          alert('Delete failed (network or server error).');
+        });
     }
 
     function uploadLlmCsv(ev) {
@@ -1814,6 +1900,17 @@ def admin():
         document.getElementById('compare-summary-card').innerHTML = '<p class="text-red-500 text-sm">Error loading comparison.</p>';
       });
     }
+
+    // Delegated click — inline onclick is blocked by many CSPs (e.g. on Render).
+    document.getElementById('llm-models-card').addEventListener('click', function(ev) {
+      var t = ev.target;
+      if (!t || !t.closest) return;
+      var btn = t.closest('.llm-delete-btn');
+      if (!btn) return;
+      ev.preventDefault();
+      var model = btn.getAttribute('data-judge-model');
+      if (model) deleteLlmModel(model);
+    });
 
     // Auto-load scores on page load
     loadScores();
