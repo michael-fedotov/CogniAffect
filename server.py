@@ -19,9 +19,11 @@ import os
 import argparse
 import hashlib
 from collections import defaultdict
+from contextlib import contextmanager
 from datetime import datetime, timezone
 
 import psycopg2
+from psycopg2 import pool
 from dotenv import load_dotenv
 from psycopg2.extras import RealDictCursor, Json
 from flask import Flask, request, jsonify, send_from_directory, Response
@@ -95,21 +97,37 @@ class _PgConn:
     def commit(self):
         self._raw.commit()
 
-    def __enter__(self):
-        return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        try:
-            if exc_type is not None:
-                self._raw.rollback()
-            else:
-                self._raw.commit()
-        finally:
-            self._raw.close()
+_pg_pool = None
 
 
+def _get_pg_pool():
+    global _pg_pool
+    if _pg_pool is None:
+        # Keep modest: each Gunicorn worker has its own pool; Supabase has connection limits.
+        maxconn = int(os.environ.get("DB_POOL_MAX", "4"))
+        _pg_pool = pool.ThreadedConnectionPool(
+            1,
+            max(2, maxconn),
+            dsn=_database_url(),
+        )
+    return _pg_pool
+
+
+@contextmanager
 def get_db():
-    return _PgConn(psycopg2.connect(_database_url()))
+    """Borrow a connection from the pool; commit on success, rollback on error."""
+    p = _get_pg_pool()
+    raw = p.getconn()
+    try:
+        yield _PgConn(raw)
+    except Exception:
+        raw.rollback()
+        raise
+    else:
+        raw.commit()
+    finally:
+        p.putconn(raw)
 
 
 def init_db():
