@@ -1,7 +1,9 @@
 """
 BWS Empathy Annotation - Flask Backend
 
-Serves the annotation app and collects annotations in a SQLite database.
+Serves the annotation app and stores annotations in PostgreSQL (e.g. Supabase).
+
+Set DATABASE_URL to your connection string (append ?sslmode=require if needed).
 
 Usage:
     python server.py
@@ -10,7 +12,6 @@ Then open http://localhost:5000 in a browser.
 Admin dashboard: http://localhost:5000/admin
 """
 
-import sqlite3
 import json
 import csv
 import io
@@ -18,14 +19,19 @@ import os
 import argparse
 from collections import defaultdict
 from datetime import datetime, timezone
+
+import psycopg2
+from dotenv import load_dotenv
+from psycopg2.extras import RealDictCursor
 from flask import Flask, request, jsonify, send_from_directory, Response
 from flask_cors import CORS
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "https://michael-fedotov.github.io/CogniAffect/"}})
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "annotations.db")
 
 # Vite production build output lives at <project-root>/dist/
 # Fall back to serving the legacy index.html if dist/ hasn't been built yet.
@@ -41,17 +47,53 @@ CSV_COLUMNS = [
 
 # ── Database ──────────────────────────────────────────────────────────────────
 
+
+def _database_url():
+    url = os.environ.get("DATABASE_URL")
+    if not url:
+        raise RuntimeError(
+            "DATABASE_URL is not set. Set it to your Supabase PostgreSQL connection string "
+            "(append ?sslmode=require if not already present)."
+        )
+    return url
+
+
+class _PgConn:
+    """Thin wrapper so routes can keep using conn.execute(...).fetchall() / fetchone()."""
+
+    def __init__(self, raw):
+        self._raw = raw
+
+    def execute(self, sql, params=None):
+        cur = self._raw.cursor(cursor_factory=RealDictCursor)
+        cur.execute(sql, params or ())
+        return cur
+
+    def commit(self):
+        self._raw.commit()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        try:
+            if exc_type is not None:
+                self._raw.rollback()
+            else:
+                self._raw.commit()
+        finally:
+            self._raw.close()
+
+
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    return _PgConn(psycopg2.connect(_database_url()))
 
 
 def init_db():
-    with get_db() as conn:
-        conn.executescript("""
+    ddl = [
+        """
             CREATE TABLE IF NOT EXISTS annotations (
-                id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+                id                      SERIAL PRIMARY KEY,
                 annotation_id           TEXT    UNIQUE NOT NULL,
                 annotator_id            TEXT    NOT NULL,
                 scenario_id             TEXT    NOT NULL,
@@ -68,18 +110,20 @@ def init_db():
                 timestamp               TEXT    DEFAULT '',
                 session_duration_seconds TEXT   DEFAULT '',
                 is_complete             INTEGER DEFAULT 0,
-                created_at              TEXT    DEFAULT CURRENT_TIMESTAMP,
-                updated_at              TEXT    DEFAULT CURRENT_TIMESTAMP
-            );
-
+                created_at              TEXT    DEFAULT (CURRENT_TIMESTAMP::text),
+                updated_at              TEXT    DEFAULT (CURRENT_TIMESTAMP::text)
+            )
+        """,
+        """
             CREATE TABLE IF NOT EXISTS sessions (
                 annotator_id TEXT    PRIMARY KEY,
                 session_data TEXT    NOT NULL,
-                updated_at   TEXT    DEFAULT CURRENT_TIMESTAMP
-            );
-
+                updated_at   TEXT    DEFAULT (CURRENT_TIMESTAMP::text)
+            )
+        """,
+        """
             CREATE TABLE IF NOT EXISTS llm_annotations (
-                id                       INTEGER PRIMARY KEY AUTOINCREMENT,
+                id                       SERIAL PRIMARY KEY,
                 annotation_id            TEXT    DEFAULT '',
                 judge_model              TEXT    NOT NULL,
                 scenario_id              TEXT    NOT NULL,
@@ -96,10 +140,14 @@ def init_db():
                 timestamp                TEXT    DEFAULT '',
                 session_duration_seconds TEXT    DEFAULT '',
                 is_complete              INTEGER DEFAULT 0,
-                created_at               TEXT    DEFAULT CURRENT_TIMESTAMP,
+                created_at               TEXT    DEFAULT (CURRENT_TIMESTAMP::text),
                 UNIQUE(judge_model, scenario_id)
-            );
-        """)
+            )
+        """,
+    ]
+    with get_db() as conn:
+        for stmt in ddl:
+            conn.execute(stmt)
 
 
 init_db()
@@ -136,7 +184,7 @@ def scenarios_json():
 def get_session(annotator_id):
     with get_db() as conn:
         row = conn.execute(
-            "SELECT session_data FROM sessions WHERE annotator_id = ?",
+            "SELECT session_data FROM sessions WHERE annotator_id = %s",
             (annotator_id,),
         ).fetchone()
     if not row:
@@ -165,7 +213,12 @@ def sync():
     with get_db() as conn:
         # Upsert full session blob (used for resume)
         conn.execute(
-            "INSERT OR REPLACE INTO sessions (annotator_id, session_data, updated_at) VALUES (?, ?, ?)",
+            """
+            INSERT INTO sessions (annotator_id, session_data, updated_at) VALUES (%s, %s, %s)
+            ON CONFLICT (annotator_id) DO UPDATE SET
+                session_data = EXCLUDED.session_data,
+                updated_at = EXCLUDED.updated_at
+            """,
             (annotator_id, json.dumps(session_data), now),
         )
 
@@ -226,22 +279,22 @@ def sync():
                      cognitive_most, cognitive_least, cognitive_reasoning,
                      affective_most, affective_least, affective_reasoning,
                      timestamp, session_duration_seconds, is_complete, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(annotation_id) DO UPDATE SET
-                    context_snippet          = excluded.context_snippet,
-                    response_a_label         = excluded.response_a_label,
-                    response_b_label         = excluded.response_b_label,
-                    response_c_label         = excluded.response_c_label,
-                    cognitive_most           = excluded.cognitive_most,
-                    cognitive_least          = excluded.cognitive_least,
-                    cognitive_reasoning      = excluded.cognitive_reasoning,
-                    affective_most           = excluded.affective_most,
-                    affective_least          = excluded.affective_least,
-                    affective_reasoning      = excluded.affective_reasoning,
-                    timestamp                = excluded.timestamp,
-                    session_duration_seconds = excluded.session_duration_seconds,
-                    is_complete              = excluded.is_complete,
-                    updated_at               = excluded.updated_at
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (annotation_id) DO UPDATE SET
+                    context_snippet          = EXCLUDED.context_snippet,
+                    response_a_label         = EXCLUDED.response_a_label,
+                    response_b_label         = EXCLUDED.response_b_label,
+                    response_c_label         = EXCLUDED.response_c_label,
+                    cognitive_most           = EXCLUDED.cognitive_most,
+                    cognitive_least          = EXCLUDED.cognitive_least,
+                    cognitive_reasoning      = EXCLUDED.cognitive_reasoning,
+                    affective_most           = EXCLUDED.affective_most,
+                    affective_least          = EXCLUDED.affective_least,
+                    affective_reasoning      = EXCLUDED.affective_reasoning,
+                    timestamp                = EXCLUDED.timestamp,
+                    session_duration_seconds = EXCLUDED.session_duration_seconds,
+                    is_complete              = EXCLUDED.is_complete,
+                    updated_at               = EXCLUDED.updated_at
                 """,
                 (
                     annotation_id, annotator_id, scenario_id, context_snippet,
@@ -287,7 +340,7 @@ def export_all_csv():
 def export_annotator_csv(annotator_id):
     with get_db() as conn:
         rows = conn.execute(
-            f"SELECT {', '.join(CSV_COLUMNS)} FROM annotations WHERE annotator_id = ? ORDER BY scenario_id",
+            f"SELECT {', '.join(CSV_COLUMNS)} FROM annotations WHERE annotator_id = %s ORDER BY scenario_id",
             (annotator_id,),
         ).fetchall()
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -333,7 +386,7 @@ def status():
             "total_annotations": total,
             "complete_annotations": complete,
             "annotator_count": annotators,
-            "db_path": DB_PATH,
+            "database": "postgresql",
         }
     )
 
@@ -536,23 +589,23 @@ def llm_judge_upload():
                     affective_most, affective_least, affective_reasoning,
                     timestamp, session_duration_seconds, is_complete, created_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(judge_model, scenario_id) DO UPDATE SET
-                    annotation_id            = excluded.annotation_id,
-                    context_snippet          = excluded.context_snippet,
-                    response_a_label         = excluded.response_a_label,
-                    response_b_label         = excluded.response_b_label,
-                    response_c_label         = excluded.response_c_label,
-                    cognitive_most           = excluded.cognitive_most,
-                    cognitive_least          = excluded.cognitive_least,
-                    cognitive_reasoning      = excluded.cognitive_reasoning,
-                    affective_most           = excluded.affective_most,
-                    affective_least          = excluded.affective_least,
-                    affective_reasoning      = excluded.affective_reasoning,
-                    timestamp                = excluded.timestamp,
-                    session_duration_seconds = excluded.session_duration_seconds,
-                    is_complete              = excluded.is_complete,
-                    created_at               = excluded.created_at
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (judge_model, scenario_id) DO UPDATE SET
+                    annotation_id            = EXCLUDED.annotation_id,
+                    context_snippet          = EXCLUDED.context_snippet,
+                    response_a_label         = EXCLUDED.response_a_label,
+                    response_b_label         = EXCLUDED.response_b_label,
+                    response_c_label         = EXCLUDED.response_c_label,
+                    cognitive_most           = EXCLUDED.cognitive_most,
+                    cognitive_least          = EXCLUDED.cognitive_least,
+                    cognitive_reasoning      = EXCLUDED.cognitive_reasoning,
+                    affective_most           = EXCLUDED.affective_most,
+                    affective_least          = EXCLUDED.affective_least,
+                    affective_reasoning      = EXCLUDED.affective_reasoning,
+                    timestamp                = EXCLUDED.timestamp,
+                    session_duration_seconds = EXCLUDED.session_duration_seconds,
+                    is_complete              = EXCLUDED.is_complete,
+                    created_at               = EXCLUDED.created_at
                 """,
                 (
                     (row.get("annotation_id") or "").strip(),
@@ -598,7 +651,7 @@ def llm_judge_scores():
 
     with get_db() as conn:
         rows = conn.execute(
-            "SELECT * FROM llm_annotations WHERE judge_model = ? AND is_complete = 1",
+            "SELECT * FROM llm_annotations WHERE judge_model = %s AND is_complete = 1",
             (model,),
         ).fetchall()
     rows = [dict(r) for r in rows]
@@ -613,7 +666,7 @@ def llm_judge_delete(model):
     if not model.strip():
         return jsonify({"error": "Invalid model"}), 400
     with get_db() as conn:
-        cur = conn.execute("DELETE FROM llm_annotations WHERE judge_model = ?", (model,))
+        cur = conn.execute("DELETE FROM llm_annotations WHERE judge_model = %s", (model,))
         conn.commit()
         deleted = cur.rowcount
     return jsonify({"status": "ok", "deleted_rows": deleted, "judge_model": model})
@@ -630,7 +683,7 @@ def comparison():
             "SELECT * FROM annotations WHERE is_complete = 1"
         ).fetchall()
         llm_rows = conn.execute(
-            "SELECT * FROM llm_annotations WHERE judge_model = ? AND is_complete = 1",
+            "SELECT * FROM llm_annotations WHERE judge_model = %s AND is_complete = 1",
             (model,),
         ).fetchall()
 
@@ -1359,6 +1412,6 @@ if __name__ == "__main__":
     print(f"  App:      http://localhost:{args.port}")
     print(f"  Admin:    http://localhost:{args.port}/admin")
     print(f"  Export:   http://localhost:{args.port}/api/export/csv")
-    print(f"  Database: {DB_PATH}")
+    print("  Database: PostgreSQL (DATABASE_URL)")
     print()
     app.run(debug=args.debug, host=args.host, port=args.port)
