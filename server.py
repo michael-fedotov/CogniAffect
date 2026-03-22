@@ -489,8 +489,14 @@ def admin_post_scenarios():
 
 # ── Session API ───────────────────────────────────────────────────────────────
 
-@app.route("/api/session/<annotator_id>", methods=["GET"])
-def get_session(annotator_id):
+@app.route("/api/session/<annotator_id>", methods=["GET", "DELETE"])
+def session_by_annotator(annotator_id):
+    if request.method == "DELETE":
+        with get_db() as conn:
+            conn.execute("DELETE FROM sessions WHERE annotator_id = %s", (annotator_id,))
+            conn.commit()
+        return jsonify({"status": "ok"})
+
     with get_db() as conn:
         row = conn.execute(
             "SELECT session_data FROM sessions WHERE annotator_id = %s",

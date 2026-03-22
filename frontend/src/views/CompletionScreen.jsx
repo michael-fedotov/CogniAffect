@@ -1,11 +1,31 @@
+import { useEffect, useRef } from 'react';
 import { isAnnotationComplete } from '../utils/annotation/completion';
 import { generateCSV } from '../utils/csv/generateCsv';
 import { downloadFile } from '../utils/file/downloadFile';
 import { apiUrl } from '../utils/constants/api';
 import { ACTION_TYPES } from '../state/annotationActionTypes';
+import { syncToServer, deleteSessionFromServer } from '../utils/api/annotationApi';
+import { clearLocalSession } from '../utils/storage/localSessionStorage';
 
 export function CompletionScreen({ state, dispatch }) {
   const { scenarios, annotations, annotatorId } = state;
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  useEffect(() => {
+    if (!annotatorId) return;
+    let cancelled = false;
+    (async () => {
+      await syncToServer(stateRef.current, {});
+      if (cancelled) return;
+      await deleteSessionFromServer(annotatorId);
+      if (cancelled) return;
+      clearLocalSession(annotatorId);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [annotatorId]);
   const completedCount = scenarios.filter((s) =>
     isAnnotationComplete(annotations[s.scenario_id]),
   ).length;
