@@ -27,7 +27,7 @@ The parent app loads a **scenarios JSON** file; scripts here turn raw CSV export
 | **`transcript_set.csv`** | Final sampled rows: one **unique `dialog_id` per row**; columns match the source export (see [CSV columns](#csv-column-reference)). |
 | **`transcript_set_build.log`** | Human-readable **run report**: counts, random seed, per-dialog collapse notes, and **excluded** dialogs with reasons. |
 | **`scenarios_transcript_set.json`** | **App-ready** bundle produced from `transcript_set.csv`. |
-| **`scenarios_transcript_set_with_llm_candidates.json`** | Same shape as a scenarios file after **`fill_llm_responses_openai.py`** replaces B/C placeholders with model output. |
+| **`scenarios_transcript_set_with_llm_candidates.json`** | Same shape as a scenarios file after **`generate_llm_candidate_responses.py`** replaces B/C placeholders with model output. |
 
 Regenerating overwrites these files. Keep a copy elsewhere if you need to freeze a specific version.
 
@@ -35,13 +35,13 @@ Regenerating overwrites these files. Keep a copy elsewhere if you need to freeze
 
 ## End-to-end pipeline
 
-All commands below assume the **repository root** (the directory that contains `dataset_generation/` and `pyproject.toml`).
+All commands below assume the **repository root** (the directory that contains `dataset_generation/` and `pyproject.toml`). Use **`poetry run python`** after **`poetry install`** at the repo root (dependencies include `openai` for the LLM fill step).
 
 Build the transcript CSV (default input: `full_dataset_rows.csv`), then export scenarios JSON:
 
 ```bash
-python dataset_generation/build_transcript_set.py
-python dataset_generation/export_scenarios_from_shortlist.py
+poetry run python dataset_generation/build_transcript_set.py
+poetry run python dataset_generation/export_scenarios_from_shortlist.py
 ```
 
 Produces:
@@ -50,21 +50,43 @@ Produces:
 - `dataset_generation/outputs/transcript_set_build.log`
 - `dataset_generation/outputs/scenarios_transcript_set.json`
 
-Use `python3` instead of `python` if that is what your system uses.
+Without Poetry, run the same script paths with `python` or `python3`.
 
 ### Fill LLM responses B and C (OpenAI)
 
 When you have a scenarios JSON whose B/C fields are still placeholders (for example `outputs/dataset_to_use_4.json`), generate cognitive and affective replies from the prompts in **`prompts.py`** at the repository root:
 
 ```bash
-pip install openai   # once
+poetry install   # once, at repo root (includes openai)
 export OPENAI_API_KEY=sk-...   # or add OPENAI_API_KEY to `.env` at the repo root
-python dataset_generation/generate_llm_candidate_responses.py
+poetry run python dataset_generation/generate_llm_candidate_responses.py
 ```
 
-Defaults: reads **`dataset_generation/outputs/scenarios_transcript_set_with_llm_candidates.json`**, joins each scenario to **`dataset_generation/full_dataset_rows.csv`** on **`source_row_index`** (must match column **`index`**), uses model **`gpt-5`**, writes **`dataset_generation/outputs/scenarios_transcript_set_with_llm_candidates.json`**. Override paths with `--input`, `--csv`, and `--output`. Use `--dry-run` to call the API for the first scenario only.
+Defaults: reads **`dataset_generation/outputs/scenarios_transcript_set.json`**, joins each scenario to **`dataset_generation/full_dataset_rows.csv`** on **`source_row_index`** (must match column **`index`**), uses model **`gpt-5`**, writes **`dataset_generation/outputs/scenarios_transcript_set_with_llm_candidates.json`**. Override paths with `--input`, `--csv`, and `--output`.
 
-API errors **fail the run** (no partial file with mixed real and placeholder B/C). Requires network access to OpenAI.
+**Skipping already-filled slots:** By default, the script only calls the API for **B** and/or **C** when that field’s text still equals the exact placeholders from export (`[LLM Cognitive empathy — replace with generated response]` / `[LLM Affective empathy — replace with generated response]`). Scenarios where both are already replaced are skipped (no API). Use **`--force`** to regenerate **every** B and C regardless. **`--dry-run`** processes only the **first scenario in file order** (index 0); if that row is already complete, it is skipped.
+
+API errors **fail the run** (no output file update on failure). Requires network access to OpenAI.
+
+#### Custom scenarios file or hand-edited `context`
+
+The defaults above match the **straight pipeline**: export writes `scenarios_transcript_set.json`, and that file’s `context` fields match **`format_context(prior_dialog)`** from the CSV. If you instead keep a scenarios JSON **elsewhere** (for example **`gp5-generated-responses.json`** at the repository root) or you **manually changed** some `context` strings, use explicit paths and consider **`--use-json-context`**:
+
+- **`--input` / `--output`** — Point to your file and a new output path (or a temp file, then replace the original after review).
+- **`--use-json-context`** — Fills the model prompt from each scenario’s JSON **`context`** (and infers the last **Client:** turn from that text). Without this flag, the script rebuilds the transcript from the CSV, which can **diverge** from what annotators see if the JSON was edited.
+- The CSV is still required: every **`source_row_index`** must exist in **`full_dataset_rows.csv`** (the script uses it for validation and, unless you use `--use-json-context`, for **`prior_dialog`** / **`prior_speaker_turn`**).
+
+Example from the repository root:
+
+```bash
+poetry run python dataset_generation/generate_llm_candidate_responses.py \
+  --input gp5-generated-responses.json \
+  --csv dataset_generation/full_dataset_rows.csv \
+  --output gp5-generated-responses_filled.json \
+  --use-json-context
+```
+
+This is the **same script** as the default command; only paths and **`--use-json-context`** differ when your stimuli file is not the default export or no longer matches the CSV verbatim.
 
 ### Using the scenarios in CogniAffect
 
@@ -230,6 +252,6 @@ Some sources may still touch on difficult themes. Use your **IRB** and study pro
 
 - **Python 3.9+**
 - **Core pipeline** (`build_transcript_set.py`, `export_scenarios_from_shortlist.py`, `text_sanitize.py`): standard library only.
-- **`fill_llm_responses_openai.py`**: install **`openai`**, set **`OPENAI_API_KEY`**, and keep **`prompts.py`** at the repository root (imported by the script).
+- **`generate_llm_candidate_responses.py`**: from the repo root run **`poetry install`** (pulls in **`openai`**), set **`OPENAI_API_KEY`**, and keep **`prompts.py`** at the repository root (imported by the script). Invoke with **`poetry run python dataset_generation/generate_llm_candidate_responses.py`**.
 
 If you change file names or paths, pass explicit `--input` / `--output` / `--log` arguments so the scripts stay in sync.

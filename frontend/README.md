@@ -25,7 +25,7 @@ cd frontend
 npm run build
 ```
 
-Output goes to `dist/` at the **project root** (`../dist` relative to `frontend/`). Running `python server.py` from the project root will then serve this build.
+Output goes to `dist/` at the **project root** (`../dist` relative to `frontend/`). Running `poetry run python server.py` from the project root will then serve this build.
 
 ## Deployment on Render
 
