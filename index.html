@@ -33,6 +33,15 @@
     :focus-visible { outline: 2px solid #4F46E5; outline-offset: 2px; }
     .radio-option input[type="radio"]:focus-visible + span { outline: 2px solid #4F46E5; outline-offset: 2px; border-radius: 4px; }
     .context-turn { white-space: pre-wrap; }
+    /* Plain CSS: Tailwind Play CDN may not JIT-scan classes inside Babel/JSX strings. */
+    .context-speaker-client {
+      color: #7e22ce;
+      font-weight: 600;
+    }
+    .context-speaker-therapist {
+      color: #475569;
+      font-weight: 400;
+    }
     .scrollbar-thin::-webkit-scrollbar { width: 6px; }
     .scrollbar-thin::-webkit-scrollbar-track { background: #F1F5F9; border-radius: 3px; }
     .scrollbar-thin::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
@@ -506,14 +515,14 @@
               trimmed.startsWith('Therapist:') || trimmed.startsWith('Counselor:');
             if (isClientLabel) {
               return (
-                <p key={i} className="context-turn text-sm font-semibold text-purple-700">
+                <p key={i} className="context-turn text-sm context-speaker-client">
                   {trimmed}
                 </p>
               );
             }
             if (isTherapistLabel) {
               return (
-                <p key={i} className="context-turn text-sm text-slate-600">
+                <p key={i} className="context-turn text-sm context-speaker-therapist">
                   {trimmed}
                 </p>
               );
