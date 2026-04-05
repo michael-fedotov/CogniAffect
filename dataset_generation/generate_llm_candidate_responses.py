@@ -6,6 +6,9 @@ Joins each scenario to the source CSV by ``source_row_index`` → ``index``. Fil
 ``{{conversation_context}}`` with the same Client/Therapist transcript as the scenario JSON
 ``context`` field (via ``format_context`` on ``prior_dialog``), and ``{{last_client_utterance}}``
 from ``prior_speaker_turn``.
+
+By default, only slots whose text still equals the export placeholders are sent to the API;
+use ``--force`` to regenerate every B/C.
 """
 
 from __future__ import annotations
@@ -48,6 +51,49 @@ _OUTPUT_DIR = _DATASET_DIR / "outputs"
 
 # Split filled prompts here: system = instructions; user = dialogue + task (matches prompts.py).
 _CONV_MARKER = "DIALOGUE SO FAR"
+
+# Must match placeholders written by export_scenarios_from_shortlist (exact string after strip).
+_PLACEHOLDER_B = "[LLM Cognitive empathy — replace with generated response]"
+_PLACEHOLDER_C = "[LLM Affective empathy — replace with generated response]"
+
+
+def _bc_response_texts(scenario: dict[str, Any]) -> tuple[str, str]:
+    """Return stripped B and C ``text`` values (empty if response id missing)."""
+    b = c = ""
+    for r in scenario.get("responses") or []:
+        rid = r.get("response_id")
+        if rid == "B":
+            b = (r.get("text") or "").strip()
+        elif rid == "C":
+            c = (r.get("text") or "").strip()
+    return b, c
+
+
+def _bc_fill_flags(scenario: dict[str, Any], *, force: bool) -> tuple[bool, bool]:
+    """Return (need_b, need_c): whether to call the API for each slot.
+
+    When *force* is True, both are True. Otherwise a slot needs fill iff its text
+    equals the corresponding placeholder constant.
+    """
+    if force:
+        return True, True
+    b, c = _bc_response_texts(scenario)
+    return (b == _PLACEHOLDER_B), (c == _PLACEHOLDER_C)
+
+
+def _count_fill_stats(
+    scenarios_list: list[dict[str, Any]], *, force: bool
+) -> tuple[int, int]:
+    """Return (needs_work, fully_skipped) counts over all scenarios."""
+    needs_work = 0
+    fully_skipped = 0
+    for sc in scenarios_list:
+        nb, nc = _bc_fill_flags(sc, force=force)
+        if not nb and not nc:
+            fully_skipped += 1
+        else:
+            needs_work += 1
+    return needs_work, fully_skipped
 
 
 def _word_count(s: str) -> int:
@@ -132,6 +178,26 @@ def _strip_speaker_tags(s: str) -> str:
     t = (s or "").replace("<speaker>", "").replace("</speaker>", "")
     t = re.sub(r"\s+", " ", t).strip()
     return t
+
+
+def _last_client_utterance_from_context(context: str) -> str:
+    """Take the last ``Client:`` block from annotator-style context (before the target reply).
+
+    Matches ``export_scenarios_from_shortlist.format_context`` output: ``Client:`` / ``Therapist:``
+    turns separated by blank lines.
+    """
+    ctx = (context or "").strip()
+    if not ctx:
+        return ""
+    last = ""
+    for m in re.finditer(r"(?:^|\n\n)\s*Client:\s*", ctx, flags=re.MULTILINE):
+        tail = ctx[m.end() :]
+        tm = re.search(r"\n\n\s*Therapist:\s*", tail)
+        if tm:
+            last = tail[: tm.start()].strip()
+        else:
+            last = tail.strip()
+    return last
 
 
 def _fill_template(
@@ -262,8 +328,9 @@ def main() -> None:
     """CLI entry: fill response B (cognitive) and C (affective) for each scenario via OpenAI.
 
     Reads a scenarios JSON, joins each scenario to the source CSV by ``source_row_index``,
-    calls the model twice per scenario (unless ``--dry-run``), updates ``responses`` for
-    ids ``B`` and ``C``, refreshes ``import_timestamp``, and writes ``--output``.
+    calls the model only for slots that still match placeholder text (unless ``--force``),
+    updates ``responses`` for ids ``B`` and ``C``, refreshes ``import_timestamp``, and writes
+    ``--output``.
 
     Raises
     ------
@@ -330,7 +397,25 @@ def main() -> None:
     ap.add_argument(
         "--dry-run",
         action="store_true",
-        help="Process only the first scenario and print B/C to stderr; still writes output.",
+        help=(
+            "Process only the first scenario in file order (index 0); print generated B/C to "
+            "stderr if that row needed API calls. Still writes full output JSON. If that row is "
+            "already filled, it is skipped."
+        ),
+    )
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="Regenerate B and C for every scenario even when placeholders are already replaced.",
+    )
+    ap.add_argument(
+        "--use-json-context",
+        action="store_true",
+        help=(
+            "Build prompts from each scenario's JSON ``context`` (and infer last client turn "
+            "from it) instead of CSV prior_dialog / prior_speaker_turn. Use when the JSON was "
+            "edited and must match what annotators see."
+        ),
     )
     args = ap.parse_args()
 
@@ -374,16 +459,66 @@ def main() -> None:
             + f"\n(CSV: {args.csv})"
         )
 
+    need_any_total, skip_full_total = _count_fill_stats(out_scenarios, force=args.force)
     n = 1 if args.dry_run else len(scenarios)
+    if args.force:
+        print(
+            f"Filling all B/C (--force) for {n} scenario(s) in this pass; "
+            f"model={args.model!r}. This can take several minutes.",
+            flush=True,
+        )
+    else:
+        print(
+            f"Filling missing B/C only (exact placeholder match); skipping already-filled slots. "
+            f"model={args.model!r}.",
+            flush=True,
+        )
+        print(
+            f"  Across entire file: {need_any_total} scenario(s) need at least one slot, "
+            f"{skip_full_total} already complete.",
+            flush=True,
+        )
+        print(f"  This run processes {n} scenario(s) by index. This can take several minutes.", flush=True)
+
+    touched = 0
+    skipped_full = 0
+
     for i in range(n):
         sc = out_scenarios[i]
         sid = sc.get("scenario_id", "")
+        need_b, need_c = _bc_fill_flags(sc, force=args.force)
+        b_existing, c_existing = _bc_response_texts(sc)
+
+        if not need_b and not need_c:
+            skipped_full += 1
+            print(
+                f"  [{i + 1}/{n}] {sid} skipped (B and C already filled).",
+                flush=True,
+            )
+            if args.dry_run:
+                print(
+                    f"[dry-run] {sid}: skipped (nothing to generate).",
+                    file=sys.stderr,
+                )
+                break
+            continue
+
+        print(f"  [{i + 1}/{n}] {sid} …", flush=True)
+        touched += 1
         idx = str(sc.get("source_row_index") or "").strip()
         row = index_map[idx]
-        prior_dialog_raw = (row.get("prior_dialog") or "").strip()
-        conversation_context = format_context(prior_dialog_raw)
-        ps = (row.get("prior_speaker_turn") or "").strip()
-        last_client = _strip_speaker_tags(ps)
+        if args.use_json_context:
+            conversation_context = (sc.get("context") or "").strip()
+            last_client = _last_client_utterance_from_context(conversation_context)
+            if not last_client:
+                prior_dialog_raw = (row.get("prior_dialog") or "").strip()
+                ps = (row.get("prior_speaker_turn") or "").strip()
+                last_client = _strip_speaker_tags(ps)
+        else:
+            prior_dialog_raw = (row.get("prior_dialog") or "").strip()
+            conversation_context = format_context(prior_dialog_raw)
+            ps = (row.get("prior_speaker_turn") or "").strip()
+            last_client = _strip_speaker_tags(ps)
 
         human_a = _human_baseline_text(sc)
         lg = _length_guidance(
@@ -402,28 +537,44 @@ def main() -> None:
         sys_c, usr_c = _split_system_user(cog_filled)
         sys_e, usr_e = _split_system_user(emo_filled)
 
+        b_text = b_existing
+        c_text = c_existing
         try:
-            b_text = _complete(
-                client,
-                args.model,
-                sys_c,
-                usr_c,
-                temperature=args.temperature,
-            )
-            time.sleep(args.sleep)
-            c_text = _complete(
-                client,
-                args.model,
-                sys_e,
-                usr_e,
-                temperature=args.temperature,
-            )
+            if need_b:
+                b_text = _complete(
+                    client,
+                    args.model,
+                    sys_c,
+                    usr_c,
+                    temperature=args.temperature,
+                )
+            if need_b and need_c:
+                time.sleep(args.sleep)
+            if need_c:
+                c_text = _complete(
+                    client,
+                    args.model,
+                    sys_e,
+                    usr_e,
+                    temperature=args.temperature,
+                )
         except Exception as e:
             raise SystemExit(f"{sid}: OpenAI API error: {e}") from e
 
+        parts = []
+        if need_b:
+            parts.append("B")
+        if need_c:
+            parts.append("C")
+        print(
+            f"  [{i + 1}/{n}] {sid} done (filled {', '.join(parts)}).",
+            flush=True,
+        )
         if args.verbose:
-            print(f"{sid} B (tail): {b_text[-200:]!r}", flush=True)
-            print(f"{sid} C (tail): {c_text[-200:]!r}", flush=True)
+            if need_b:
+                print(f"{sid} B (tail): {b_text[-200:]!r}", flush=True)
+            if need_c:
+                print(f"{sid} C (tail): {c_text[-200:]!r}", flush=True)
 
         for resp in sc.get("responses") or []:
             rid = resp.get("response_id")
@@ -433,11 +584,11 @@ def main() -> None:
                 resp["text"] = c_text
 
         if args.dry_run:
-            print(f"[dry-run] {sid} B: {b_text[:200]!r}...", file=sys.stderr)
-            print(f"[dry-run] {sid} C: {c_text[:200]!r}...", file=sys.stderr)
+            if need_b:
+                print(f"[dry-run] {sid} B: {b_text[:200]!r}...", file=sys.stderr)
+            if need_c:
+                print(f"[dry-run] {sid} C: {c_text[:200]!r}...", file=sys.stderr)
             break
-
-        time.sleep(args.sleep)
 
     out_data["import_timestamp"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -445,7 +596,10 @@ def main() -> None:
         json.dumps(out_data, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
-    print(f"Wrote {args.output} ({len(out_scenarios)} scenarios)")
+    print(
+        f"Wrote {args.output} ({len(out_scenarios)} scenarios); "
+        f"this pass touched {touched} scenario(s), skipped {skipped_full} already-complete row(s) in range."
+    )
 
 
 if __name__ == "__main__":
