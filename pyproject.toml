@@ -4,14 +4,13 @@ version = "0.1.0"
 description = "BWS Empathy Annotation Tool — Best-Worst Scaling study on cognitive and affective empathy in therapeutic dialogue"
 authors = []
 readme = "README.md"
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.11,<3.15"
 dependencies = [
     "flask>=3.0.0",
     "flask-cors>=4.0.0",
     "python-dotenv (>=1.0.0,<2.0.0)",
     "openai>=1.0.0",
     "psycopg2-binary>=2.9.0",
-    "unstructured[pdf] (>=0.21.5,<0.22.0)"
 ]
 
 [tool.poetry]
