@@ -1,22 +1,27 @@
 {
   "annotator_id": null,
-  "import_timestamp": "2024-02-22T10:30:00Z",
+  "import_timestamp": "2026-04-05T02:02:35Z",
+  "source_csv": "/Users/michaelfedotov/Documents/Directed Readings BWS Annotation /dataset_generation/outputs/transcript_set.csv",
   "scenarios": [
     {
       "scenario_id": "SCENARIO_01",
-      "context": "Therapist: How are you feeling today?\n\nClient: Honestly, I'm struggling. I've been trying so hard at work, putting in extra hours, but my boss keeps criticizing my output. I feel like nothing I do is good enough.\n\nTherapist: That sounds really challenging.",
+      "source_dialog_id": "RED | 351048 - offmychest",
+      "source_row_index": "9132",
+      "turn": "6",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  It's stupid to ask your ex to run away with you, right? It's so stupid. It's a terrible, terrible idea to tell your ex that you want to move away with them and make a home together. It's horrendously stupid to tell your ex that you want to abandon your whole entire life just to start a new one with them, or to tell them how long you've been thinking about that, and how many times. It's stupid. \n\n Therapist:  Not the stupidest thing I've ever heard- Kinda reminds me of a couple musicals actually \n\n Client:  It might not sound stupid, until I tell him and he thinks I'm an obsessive creep who can't get over him and decides to never talk to me again \n\n Therapist:  Valid fear. But if he doesn't know how you feel right now, is it too much of a jump to assume you're not really talking to each other? If not, how is going for it and getting rejected any different from how you're living right now? \n\n Client:  That's the problem, we DO still talk to each other. We remained friends, and I'm not sure I could risk that. This isn't the best case scenario, but it's a million times better than not talking to him at all. \n\n Therapist:  Hm. That is definitely a hard one to answer, and I don't think anyone could concretely. But, you might try asking him about his feelings regarding the breakup in a more casual way? \"hey- did we really end on an ok note?\" \"How do you feel about how things ended\" etc.",
       "responses": [
         {
           "response_id": "A",
-          "text": "That sounds incredibly frustrating. You're putting in the effort and it's clearly important to you, but it's not being recognized. That's demoralizing. Can you tell me more about what specific feedback your boss is giving? Sometimes understanding the gap between their expectations and what you're delivering can help us figure out next steps."
+          "text": "Especially if one of you withdrew more than the other, it provides an opening to discuss how you're currently relating to each other."
         },
         {
           "response_id": "B",
-          "text": "It sounds like you're experiencing a discrepancy between your effort and perceived results. This situation creates cognitive dissonance: you invest resources but receive negative feedback, which contradicts your self-estimate. The issue may involve: (1) unrealistic expectations, (2) feedback delivery problems, or (3) actual skill gaps. Which factor dominates?"
+          "text": "So keeping the friendship feels like the one stable bridge you still have to him, and telling the full truth risks burning it down for a maybe."
         },
         {
           "response_id": "C",
-          "text": "Oh wow, that must feel SO discouraging! 😟 You're working SO hard and giving it your all, but instead of appreciation, you're getting criticism. I can absolutely understand why you're doubting yourself—that would shake anyone's confidence! You deserve to feel valued for your efforts. This is really tough, and I'm so sorry you're going through this."
+          "text": "That makes so much sense. Keeping him in your life, even as friends, sounds like a real lifeline, and the thought of losing that feels genuinely scary."
         }
       ],
       "ground_truth_labels": {
@@ -27,19 +32,23 @@
     },
     {
       "scenario_id": "SCENARIO_02",
-      "context": "Client: I've been having panic attacks lately and I don't know why they're happening. It's affecting my sleep and my relationships.\n\nTherapist: Panic attacks can be really frightening. Tell me more about what you experience during them.",
+      "source_dialog_id": "counsel_chat | 1196",
+      "source_row_index": "11221",
+      "turn": "2",
+      "final_agreed_label": "Complex Reflection",
+      "context": "Client:  I'm trying to make marriage work after a split. Before our split, he lied a lot and broke every promise to me. I don't think he cheated. Last month, I asked what women work with him, so he told me. Yesterday, I found out about a girl that he said he forgot about. Should I be upset? \n\n Therapist:  I would ask you first what made you give him another chance after he repeatedly lied and broke every promise to you? I would imagine if he repeatedly lied to you that it will damage your ability to trust him now. Is he in therapy? Does he recognize that he has a problem and is he trying to repair it?",
       "responses": [
         {
           "response_id": "A",
-          "text": "That sounds terrifying. When panic attacks hit, the physical symptoms—racing heart, difficulty breathing—can feel life-threatening even though they're not dangerous. Many people find relief through understanding the panic cycle. Have you noticed any patterns before attacks start?"
+          "text": "Even if he truly forgot to tell you about the woman at work I think the real issue here is TRUST."
         },
         {
           "response_id": "B",
-          "text": "Panic attacks involve the amygdala triggering a threat response to internal bodily cues. Your sympathetic nervous system floods with cortisol and adrenaline, creating the sensation of danger despite absence of actual threat. This feedback loop: worry → symptoms → more worry, perpetuates the cycle. Breaking it requires: psychoeducation, breathing techniques, and graduated exposure."
+          "text": "Given the history, it makes sense you would treat “I forgot” as another trust test, and you are weighing whether to protect yourself or keep rebuilding."
         },
         {
           "response_id": "C",
-          "text": "I can hear how much these attacks are affecting you—that must be SO scary! 💙 The fact that they're impacting your sleep and relationships shows how overwhelming this is. But I want you to know you're not alone, and we can work through this together. These feelings are valid, and I'm here to support you every step of the way."
+          "text": "It makes a lot of sense you feel upset and uneasy, especially after so many broken promises. Finding out he left someone out can sting and shake trust."
         }
       ],
       "ground_truth_labels": {
@@ -50,19 +59,1670 @@
     },
     {
       "scenario_id": "SCENARIO_03",
-      "context": "Therapist: How's your week been?\n\nClient: Not great. I feel like I'm a burden to everyone around me. My family would be better off without me.\n\nTherapist: I'm glad you shared that with me. Can you help me understand what's making you feel this way?",
+      "source_dialog_id": "counsel_chat | 2048",
+      "source_row_index": "19776",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  Does counseling really do anything that can help people? \n\n Therapist:  Counselling offers a number of ways to help one to improve their situation. For some, this process can take a very long, winding path of self-discovery, while, for others, they are seeking a purposeful, solution-based way to approach and manage a specific problem. It's important to remember that there are different styles of therapy, some of which will work great with some, but poorly with others, specifically to help those to decide how they wish to move forward. I often recommend speaking with a number of therapists before beginning treatment to find out more about how they practice, in order to make sure their style aligns with your goals. On a more specific note, there is myriad research out in the world that indicates both counselling and medication can have an affect on changing our moods and behaviours.",
       "responses": [
         {
           "response_id": "A",
-          "text": "When we're struggling, our mind often tells us stories that aren't true—that we're burdens, that we'd be better gone. These thoughts are part of depression, not reality. You matter to the people in your life. I'd like to explore what's been happening that led to these thoughts, and we can work on shifting this perspective together."
+          "text": " However, medication is not an effective way of treating the problem, as it treats the symptoms of that problem (increased anxiety, lowered mood, etc. ) and research has shown that the most effective route for better mental health care comes from a combination of counselling and medication."
         },
         {
           "response_id": "B",
-          "text": "Catastrophic thinking and negative self-evaluation are cognitive distortions associated with depressive disorders. The belief that others would benefit from your absence represents emotional reasoning—treating thoughts as facts. Evidence-based interventions include cognitive restructuring, behavioral activation, and safety planning. What evidence supports or contradicts your belief?"
+          "text": "It sounds like you are asking whether counseling will move the needle for your particular problem, and whether it is worth the time, money, and effort it requires. What would you want to be different, and what has or has not helped before, so we can pick a focused, time limited approach, test its value, and adjust quickly if it is not helping?"
         },
         {
           "response_id": "C",
-          "text": "I hear so much pain in what you're saying, and I'm really concerned about you. 💛 Those thoughts—that you're a burden—they're so heavy to carry alone. But please know that you're valued and important, and what you're feeling right now doesn't define your worth. Let's talk about what's happened and how we can get you support. I'm here for you."
+          "text": "It makes sense to wonder if counseling can really help, especially if you are tired, doubtful, or have been disappointed before. I hear both hope and hesitation in your question, and I want you to feel cared for and not pressured as you sort out what feels right for you."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_04",
+      "source_dialog_id": "counsel_chat | 1748",
+      "source_row_index": "16973",
+      "turn": "2",
+      "final_agreed_label": "Complex Reflection",
+      "context": "Client:  I read that you should ignore them and they have to come to a conclusion that they were wrong on their own terms. Is that correct? \n\n Therapist:  It is not correct because someone who is narcissistic believes they are always right. If you ignore the person, then their thinking is that there is something wrong with you.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "Ignoring the person to the degree this is possible in the situation or relationship, will spare you to be misunderstood further."
+        },
+        {
+          "response_id": "B",
+          "text": "It sounds like you are hoping for a low effort way to protect yourself and still get accountability, but with narcissistic patterns that insight rarely comes without clear boundaries."
+        },
+        {
+          "response_id": "C",
+          "text": "It makes sense you would hope ignoring them could lead to insight, and it can feel really discouraging when it does not change anything."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_05",
+      "source_dialog_id": "counsel_chat | 1121",
+      "source_row_index": "10581",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  My fiance and I have been together for 3 years and our relationship has always been good. The only issue we had was that he felt like he wasn't getting enough sexual attention from me. I recently found out he cheated on me with another women. He says he wants his family back but I'm confused on what to do. Is it possible for us to get past the cheating, or should I just move on? \n\n Therapist:  It's possible but challenging. Both partners need to be feel motivated enough to repair the relationship and dedicated to the work needed to address whatever underlying issues led to the serious breach of trust. For some people, cheating is an absolute deal breaker-for others, the context of the cheating allows them to see it as a mistake that they can forgive their partner for. So it depends on how you feel about the relationship and whether you want to put in the work to repair it. If you're not sure how you feel, counseling can help you resolve the ambiguity, either individually or with your partner.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "Then, depending on what you decide, a counselor can help you either repair the relationship or decouple from your former partner."
+        },
+        {
+          "response_id": "B",
+          "text": "You are weighing whether his “not enough attention” became an excuse that shifts responsibility onto you, and whether rebuilding trust would require real accountability and change, not just promises."
+        },
+        {
+          "response_id": "C",
+          "text": "That is such a painful, disorienting betrayal, especially after three years of feeling mostly good together. It makes sense you feel torn and confused."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_06",
+      "source_dialog_id": "RED | 419305 - offmychest",
+      "source_row_index": "15117",
+      "turn": "4",
+      "final_agreed_label": "Advise with Permission",
+      "context": "Client:  Today is especially bad. Today the thought switch to if I could do it. I've been fairy okay for three months on it until this last month. I am also amateur song writer and this last month I've had zero thoughts. I had no creative thoughts in over a month. \n\n Therapist:  That sounds like a really rough time. I'm not really experienced enough in life to give advice, but just know that suicide is not the way and you're not in the way. Maybe talking to someone or getting therapy would help. Actively doing something (getting therapy and reaching out for help) to get better really helped for me, maybe it would work for you too \n\n Client:  Today is especially bad. Today the thought switch to if I could do it. I've been fairy okay for three months on it until this last month. I am also amateur song writer and this last month I've had zero thoughts. I had no creative thoughts in over a month. \n\n Therapist:  That sounds like a really rough time. I'm not really experienced enough in life to give advice, but just know that suicide is not the way and you're not in the way. Maybe talking to someone or getting therapy would help.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "Actively doing something (getting therapy and reaching out for help) to get better really helped for me, maybe it would work for you too"
+        },
+        {
+          "response_id": "B",
+          "text": "After three steadier months, this last month feels like you lost your footing, and the creativity going quiet makes it seem like you are losing a key part of yourself."
+        },
+        {
+          "response_id": "C",
+          "text": "It sounds terrifying and heavy to feel that switch flip today after being okay for a while, and losing your songwriting spark too. I am really sorry you are hurting."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_07",
+      "source_dialog_id": "RED | 392049 - offmychest",
+      "source_row_index": "9645",
+      "turn": "4",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  Honestly.. I just need to know.. Why do we let people in? Why do we get so attached to someone all for them to end up leaving us in the end and completely destroying us? I want answers... I just want to know why because it's just tearing me apart right now. Sorry, clearly I'm going through a really difficult time... \n\n Therapist:  The highest highs and lowest lows are what makes life real. Conquer your negative attitude! The greatest leaders, scientists, artists, explorers, and philosophers have all shared something in common with you and I: a mind capable of hurdling any seemingly impossible obstacle! So bask in the glory of your imminent success as you continue onwards and upwards with the attitude of a champion unchallenged by petty, superfluous baggage! \n\n Client:  Honestly.. I just need to know.. Why do we let people in? Why do we get so attached to someone all for them to end up leaving us in the end and completely destroying us? I want answers... I just want to know why because it's just tearing me apart right now. Sorry, clearly I'm going through a really difficult time... \n\n Therapist:  The highest highs and lowest lows are what makes life real. Conquer your negative attitude!",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "The greatest leaders, scientists, artists, explorers, and philosophers have all shared something in common with you and I: a mind capable of hurdling any seemingly impossible obstacle!"
+        },
+        {
+          "response_id": "B",
+          "text": "It sounds like you are trying to make sense of a loss that feels unfair, because letting someone matter to you meant giving them the power to leave a real impact, and now you are left carrying it alone."
+        },
+        {
+          "response_id": "C",
+          "text": "It makes so much sense that you feel torn apart right now. When someone leaves after you have let them in, it can feel like the bond was used against you, and it hurts deeply."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_08",
+      "source_dialog_id": "counsel_chat | 1102",
+      "source_row_index": "10357",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  My husband and I have been married for seven years, and in that time, we have only had sex four or five times. Others have told me that most men would have left me by now. Honestly, I think I have a low sex drive or neither one of us actually knows what we are doing. I want to be better connected with my husband. \n\n Therapist:  In order to develop a better intimate connection with your husband, it's important to first cultivate a strong connection with yourself. I would take some time to explore your own body, notice what feels pleasurable, and play with different ways to achieve orgasm on your own. Explore your own willingness to be open emotionally, sexually, and to play and have fun. Once you've engaged in a process of self exploration, I would check in with yourself and be honest about why you're not enjoying sex. Are there specific reasons you're not enjoying sex with your husband? Sometimes the reasons might be of a sexual nature and other times there could be emotional blocks (or anxiety) or other reasons that prevent you from wanting to be fully open and let go with your partner.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "From a sexual perspective, I would explore what you can do to increase your own pleasure, learn ways to communicate your needs in a loving way, and focus on pleasure and play (rather than outcome and orgasm)."
+        },
+        {
+          "response_id": "B",
+          "text": "It sounds like you are carrying a lot of pressure and comparison from what others say, and that can make sex feel like a test you are failing rather than a place you both get to learn and connect. When you think about being intimate, what tends to shut things down for you first, physically, emotionally, or between the two of you?"
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds really painful and lonely, especially with other people’s comments adding pressure and shame. It makes sense you’d wonder what’s wrong, while also still caring deeply about feeling close to your husband. I hear how much you want connection, not judgment."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_09",
+      "source_dialog_id": "counsel_chat | 1186",
+      "source_row_index": "11078",
+      "turn": "2",
+      "final_agreed_label": "Complex Reflection",
+      "context": "Client:  My wife and I got separated because I asked about her contact with a male friend of hers. The next day, she kicked me out. She let me move back two days later. Yesterday, she said she wanted a divorce then quickly changed her mind. I asked if the other guy was a factor, but she says it's not my business. \n\n Therapist:  This has to be very confusing.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "I wonder if the two of you would be able to have a conversation about what it is that she would like you to know about what happened yesterday and the day before so you know what message she wanted you to get out of all of that."
+        },
+        {
+          "response_id": "B",
+          "text": "It sounds like you are trying to make sense of some pretty sudden, high stakes shifts in the rules of your relationship, where asking for clarity about a third person led to you being pushed out and then pulled back in. When she says it is not your business, it leaves you stuck between wanting to trust her and needing basic transparency to feel secure."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds really painful and unsettling, like the ground keeps shifting under you. Being kicked out, then invited back, then hearing “divorce” and having it pulled back would leave most people feeling scared, confused, and on edge. And being told it is not your business when you are trying to understand must feel really lonely."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_10",
+      "source_dialog_id": "RED | 404308 - offmychest",
+      "source_row_index": "12154",
+      "turn": "4",
+      "final_agreed_label": "Support",
+      "context": "Client:  I am still living at home with my mother and my brother . She refuses to consider anything but homeschooling my brother. My mum works hard but has terrible habits. I feel trapped. \n\n Therapist:  I feel that the only way you're going to be able to communicate to him properly is through your mother. I can hardly wait for you to get out of there... you and everyone else in situations like those. \n\n Client:  I am still living at home with my mother and my brother . She refuses to consider anything but homeschooling my brother. My mum works hard but has terrible habits. I feel trapped. \n\n Therapist:  I feel that the only way you're going to be able to communicate to him properly is through your mother.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "I can hardly wait for you to get out of there... you and everyone else in situations like those."
+        },
+        {
+          "response_id": "B",
+          "text": "It seems like you are carrying the responsibility for your brother, but your mom’s rigidity leaves you with little real say. What options do you realistically control right now?"
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds so suffocating, like you are stuck in a home where you have no real say. I hear how trapped and worn down you feel."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_11",
+      "source_dialog_id": "counsel_chat | 1508",
+      "source_row_index": "14684",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  There's this boy who asked me out awhile ago. I said no because my friends and family would think weirdly of me. How do I be with him and tell him and tell my friends? \n\n Therapist:  Since you've decided to be with the boy who already showed you his interest, then why not simply tell him you decided to accept his invitation to be together? Probably your first concern about hesitating to accept this boy into your life due to the way you imagine your family may react if you do, is the more complex matter to solve. Forming a relationship does bring up our values and the way these are different or similar to our own. At the same time, we already have values which are rooted in those from the family in which we grew up. Your dilemma of wanting to be with this boy shows there is a clash between your values as an individual, including your choice of partner, and the way your family understands the values which support being part of a couple. Stay true to what you feel, whether this comes from your family or the way you currently are evolving.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "This will guarantee that your new relationship will be built on the values and person you truly are."
+        },
+        {
+          "response_id": "B",
+          "text": "You want to say yes to him, but you are also trying to avoid becoming the “weird” one in your friends and family’s eyes."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds really stressful, wanting him while fearing your friends and family might judge you or see you differently."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_12",
+      "source_dialog_id": "counsel_chat | 1902",
+      "source_row_index": "18565",
+      "turn": "2",
+      "final_agreed_label": "Complex Reflection",
+      "context": "Client:  How do you know you have the right therapist for you?\n\nHow would I know how to \"train\" my therapist to be able to give me what I need from treatment? \n\n Therapist:  Your comfort with a therapist is one of the most essential aspects of a quality therapeutic relationship. Don't be afraid to ask questions about the therapist's approach and background. Do you feel heard and understood? Do you find the feedback helpful and directed toward achieving your goals.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "Ensuring open communication with your therapist is primary to making sure you have the \"right\" therapist."
+        },
+        {
+          "response_id": "B",
+          "text": "It sounds like you want clarity and control, but worry you must manage the therapist instead of being supported."
+        },
+        {
+          "response_id": "C",
+          "text": "It makes sense to wonder that, you want to feel safe, understood, and not alone in guiding therapy."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_13",
+      "source_dialog_id": "RED | 351982 - depression",
+      "source_row_index": "4693",
+      "turn": "4",
+      "final_agreed_label": "Affirm",
+      "context": "Client:  I just want to be still. I know that there is an element of knowing my need to retreat into a cave will result in a bad image, but I need help. I don't know what kind. I want to be fixed and I know there is no fixing this condition. I need to know how people can still care about me and support be even though I have this chronic depression and anxiety mess that cripples me at times. \n\n Therapist:  You should never feel bad about taking time away to help yourself! There's been a stigma in workplaces toward taking care of your mental health for a long time, but thankfully that stigma is starting to wane. It can feel like the very reason you're taking days off is causing the condition to worsen in a viscous cycle. I want to reassure you there's nothing wrong with the time you're taking to deal with how you feel. \n\n Client:  Thank you so much for your post. You have no idea how much those words mean to me and how much I appreciate you taking the time to give me words of encourage and support. It really matters. Truly. Thank you. \n\n Therapist:  It's no problem at all. We all need help sometimes, myself included. Just as you should never feel bad about taking some time for yourself, you should certainly never feel bad about reaching out to others in times of need.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "I hope you find the support and encouragement in your life to help you overcome any challenges in your way."
+        },
+        {
+          "response_id": "B",
+          "text": "It sounds like being met with understanding eases that fear you will be judged or too much, and reminds you support can still be real."
+        },
+        {
+          "response_id": "C",
+          "text": "I’m really glad it landed and that you felt supported. You matter, and it makes sense to want care when things feel heavy."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_14",
+      "source_dialog_id": "counsel_chat | 1497",
+      "source_row_index": "14619",
+      "turn": "2",
+      "final_agreed_label": "Complex Reflection",
+      "context": "Client:  I have been with my husband for almost 7 years. We got engaged a little after 5 years of being together. I had always been clear that I wanted to get married and I sadly would drop hints about how i wanted him to propose. When he did propose it was during a random vacation that I had planned. I was happy but I couldn't help feeling disappointed too. I had told him numerous times before that I wanted him to do it in front of my friends and family. I know it sounds dumb to be upset but I couldn't help how I was feeling. We are now married but the wedding and ring were also far from what I wanted and it wasn't due to lack of funds. I know this is all material and the marriage is the most important thing but I cant help but get jealous and envious every time I see someone get a proposal or wedding that I had wanted. I cant help my anger because I know we only get one proposal and one wedding. What I wanted will never happen. I have been working on my feelings for the past year and half to get over it. I try to focus on our marriage but every time I see someone have the best proposals and weddings I get upset. I know it is selfish and I know its petty but I just can't control it. It's ruining our relationship because I constantly think about it. Plus, I get mad at him for small things because I am trying to hide the fact that I am so disappointed. Why can't I move on? \n\n Therapist:  It's hard to let go of the dreams you had regarding your wedding and engagement. This was something that you and most women think about for years, so it's understandable to be disappointed. But please be aware that it is rare that any wedding is perfect. You may envy your friends' weddings but more than likely they had a few mishaps of their own and/or it wasn't as perfect as they had planned it either. However, like you know, the marriage is the most important thing. How many women are envious that you are in a happy, stable relationship? I assure you that there are plenty. Try to live in the present considering that dwelling on the past can still not change how you were proposed to or how your wedding day transpired. Focus on what you can control NOW. Perhaps, you can plan an extravagant renewal of your vows or change the look of your ring? I would also be upfront with your husband and explain why you've been short lately. But after that, close that chapter and move on.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "It sounds like you have a wonderful companion and you certainly don't want to lose this due to a situation that is impossible to change."
+        },
+        {
+          "response_id": "B",
+          "text": "It seems less about the “stuff” and more about what his choices signaled to you, like your wishes were optional, so each new proposal reopens that same meaning and resentment."
+        },
+        {
+          "response_id": "C",
+          "text": "It makes so much sense that you feel hurt and robbed of something you pictured for years, and that seeing others brings up jealousy and anger. You are not dumb or petty."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_15",
+      "source_dialog_id": "RED | 413863 - offmychest",
+      "source_row_index": "14158",
+      "turn": "4",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  I'm seeing a specialist next month. He sees many members of my family who have auto immune diseases, and my mum is thinking my hives could be linked to a genetic auto immune disease/diseases. I'm thinking of going to the ED next week. I need answers and I know they'll do a bunch of tests on the spot. I just need to know what's wrong with me. \n\n Therapist:  It's leaky gut. Before you go through this please go check to see if you have h pylori. The antihistamines and steroids actually just make it worse which is why people continue with the hives. Then I used some leaky gut powder like the one from Amy Meyers. FYI i didn't have a gut issue until much later as I kept taking antihistamines and an antacid. \n\n Client:  I'm seeing a specialist next month. He sees many members of my family who have auto immune diseases, and my mum is thinking my hives could be linked to a genetic auto immune disease/diseases. I'm thinking of going to the ED next week. I need answers and I know they'll do a bunch of tests on the spot. I just need to know what's wrong with me. \n\n Therapist:  It's leaky gut. Before you go through this please go check to see if you have h pylori.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "The antihistamines and steroids actually just make it worse which is why people continue with the hives."
+        },
+        {
+          "response_id": "B",
+          "text": "Waiting a month feels unbearable, so the ED seems like the fastest way to regain control and clarity."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds really scary and exhausting, especially with your family history, and it makes sense you want answers quickly."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_16",
+      "source_dialog_id": "counsel_chat | 492",
+      "source_row_index": "4594",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  I don't remember when the voices in my head started, but I remember Hearing them when I was little. I know it's not normal to hear voices that aren't your own. I fight the voices and I want them to stop. They've been here so long and I want them gone. How can I make the voices stop? \n\n Therapist:  This isn't something you can do on your own. If you haven't already, you need to see a medical doctor ASAP to rule out medical causes for this. Many diseases, illnesses, and conditions can cause hallucinations. In the elderly, sometimes it's something as simple as a urinary tract infection. Some medicines may have that side effect as well. However, you say you've been hearing them since you were little. I have no idea how old you are now, but something that has been going on for many years does lead me to think it could be a type of schizophrenia. A psychiatrist could diagnose that after taking a complete look at your history, medical history, etc. There are medications that they can put you on that will help. One thing that I find encouraging is that you recognize you're hearing voices. This means you are not so far into a delusion as to believe it is real. A lot of people that hear or see things that aren't there are not able to have the awareness that these things are not real. They fully believe what they're hearing/seeing. It's completely real to them. Because you have the awareness that you do, I feel this is a very good sign that with treatment you can live a normal life (assuming you are not already receiving treatment for it. If you are and are still hearing the voices, please know that medications often need to be changed and adjusted, and the voices may never completely go away but medicines certainly help dull them a lot. Always talk to your doctor when it seems your symptoms are getting worse so that they can make the necessary medication adjustments for you). If at any time the voices are telling you to do something, please go to an ER as this is an emergency.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "Sometimes people hear voices telling them to harm themselves, harm someone else, or do other things that are against the law."
+        },
+        {
+          "response_id": "B",
+          "text": "It sounds like you have been battling these voices for years, trying to keep control, and you want a reliable way to quiet them rather than fighting alone."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds exhausting and frightening, especially carrying it since you were little. I hear how badly you want relief and to feel peaceful in your own mind."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_17",
+      "source_dialog_id": "counsel_chat | 1880",
+      "source_row_index": "18333",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  I keep having these random thoughts that I don't want. Things like \"you aren't worth anything.\" I know they're my own thoughts but it feels like someone else is saying it.\n\nWhat is wrong with me, and how can I stop having these thoughts? \n\n Therapist:  First off, there is nothing wrong with you. In fact, having random thoughts we feel we cannot control is actually quite common and normal. Sometimes our thoughts think they are protecting us (if we think we aren't worth anything, it won't hurt when we get rejected) but they are actually doing quite the opposite. They are keeping us \"stuck\" and creating a self-prophization. (If I think I am not worth anything, I don't have to try, and I will keep proving to myself that I am not worth anything). There are many techniques to work through and start to change our negative self-talk. There are actually many self-help workbooks that can help with this as well. A technique I like to use is meditation or mindfulness. This can teach us to accept our thoughts (not fight them) and then learn to let them go. Release the power they have on us. If we can learn to release these and not ruminate on them, this will give us the space to allow more positive and supportive thoughts to come in. Mantras can help with this as well (I AM worth a lot, I AM important, I have value).",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "Saying these to yourself everyday over and over (even if at first you don't believe) can retrain our brains to believe it (and allow us to believe it)."
+        },
+        {
+          "response_id": "B",
+          "text": "When those thoughts show up uninvited and sound like an outside voice, it can make you doubt yourself and search for a quick fix, even though part of you knows they are just mental noise."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds really unsettling and painful, like these harsh messages are intruding even though you do not agree with them. I want you to know you are not broken, and you deserve gentleness while this is happening."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_18",
+      "source_dialog_id": "counsel_chat | 1867",
+      "source_row_index": "18210",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  How do therapists classify the type of personality their clients have? What characteristics do they look at to decide what type of personality the client has? I've read about this online, but I'd like to understand this from a therapist's point of view. \n\n Therapist:  This is a great question, and I am happy to have the opportunity to explain my approach. When I am determining what type of personality a client has, I take my time and really absorb their lens/ point of view to themselves and others. Determining a personality type takes some time getting to know the person, and building rapport. After taking time to get to know them, and learning about their view they have of themselves and others, it is important to pick-up on more specific personality traits, which comprehensively contribute to a personality type. Clinicians, including myself, often witness certain traits that are enduring and consistent, which indicate a type of personality. For example, if a therapist is noticing that a client is exhibiting traits of organization, needing to be on time, planning, and perfectionism, these traits contribute to the \"type A personality\".",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "In addition to utilizing clinical judgment, clinicians often use personality assessments and follow the guidelines of the DSM-5/ ICD-10."
+        },
+        {
+          "response_id": "B",
+          "text": "You are trying to make sense of whether “personality types” are a reliable framework or just labels, and what therapists actually base them on."
+        },
+        {
+          "response_id": "C",
+          "text": "It makes sense you would want a therapist’s perspective, and it can feel personal or exposing to wonder how you might be “typed.”"
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_19",
+      "source_dialog_id": "RED | 425045 - offmychest",
+      "source_row_index": "16435",
+      "turn": "4",
+      "final_agreed_label": "Complex Reflection",
+      "context": "Client:  I work in a restaurant, and this phrase is the bane of my existence. Why is it that we punish toddlers for throwing a temper tantrum for not getting what they want, yet adults who do the exact same thing get rewarded? It makes absolutely no sense. And I absolutely hate that saying with an undying passion. \"The customer is always right\" mentality is bs and those who use it to get what they want are entitled AHs. \n\n Therapist:  $ But I think that they feel it's there one opportunity to feel superior to someone. \n\n Client:  I work in a restaurant, and this phrase is the bane of my existence. Why is it that we punish toddlers for throwing a temper tantrum for not getting what they want, yet adults who do the exact same thing get rewarded? It makes absolutely no sense. And I absolutely hate that saying with an undying passion. \"The customer is always right\" mentality is bs and those who use it to get what they want are entitled AHs.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "$ But I think that they feel it's there one opportunity to feel superior to someone."
+        },
+        {
+          "response_id": "B",
+          "text": "It sounds like your job forces you to reward bad behavior, leaving you powerless and disrespected."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds so infuriating and unfair, like you are expected to swallow disrespect while they get rewarded."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_20",
+      "source_dialog_id": "counsel_chat | 429",
+      "source_row_index": "3976",
+      "turn": "2",
+      "final_agreed_label": "Simple Reflection",
+      "context": "Client:  I am a really shy person. I'm currently in a graduate program which requires lots of presentations, but they always make me feel stressed out and less confident. How can I get more confident? \n\n Therapist:  A good way to start is the language or \"self talk\" that is happening inside your mind. Looking at your question, when it is said that the presentations \"make me feel stress\" you are giving the responsibility of the stress to the presentations and taking that away from your self. The presentations cannot give or take away your stress, that's something only you can do and you can do it! What language can you change in your self talk? For example, are you saying \"I can't speak in front of an audience! I'll fail? \"",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "That sounds a lot different than \"I studied my butt off and if I practice speaking out loud, I can ace this presentation! \""
+        },
+        {
+          "response_id": "B",
+          "text": "You’re balancing heavy program demands with a body that treats presenting like a threat, which erodes confidence. What small, controllable step could signal safety, like brief low-stakes practice or a simple script?"
+        },
+        {
+          "response_id": "C",
+          "text": "I hear how overwhelming this feels, and it makes so much sense that your confidence takes a hit. You deserve gentleness with yourself while facing something so stressful."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_21",
+      "source_dialog_id": "counsel_chat | 592",
+      "source_row_index": "5638",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  When my daughter is stressed about a silly thing from school, she starts crying and freaking out. She is a bright student, always has a 4.0, but I am afraid she is stressing too much. I'm afraid it's going to break her. I don't know if I should get her to a doctor or someone because this is not normal. \n\n Therapist:  children and adolescents who have a desire to achieve high grade point averages often have the symptoms you are describing. It sounds like, your gut is telling you to help her find ways to de-stress. Listen to your gut-always; as her mom, you know her needs better than anyone else. She would probably benefit from seeing a therapist to help her deal with the stress of being a high achiever. I provided the following suggestion to another parent with a similar concern: First identify the three most stressful aspects of the day. Do this by creating a circle on a regular size paper. (do this three times); ask your daughter how much of that circle can she confidently say she has under control. shade that in. The remaining parts of the circle are then named by intensity. (for example, in the circle labeled school anxiety, the client identified that she felt she could handle school anxiety 1 out of 4 days. The circle was split into 1/4. 1/4 of the circle was shaded . the remaining parts were labeled with the challenges that caused the client school anxiety. (these were 1. walking to class during passing time. 2. not having the assignments completed or at all. 3. feeling fat. after labeling each part; and making note of the percentage of the stress associated with each concern, free form thinking takes place and a pile of unwanted behaviors and genetic responses are portrayed around the circle in bright colors. Using note cards, create a tree of concern; the concerns can be written on note cards. a concern = the behavior that leads to more trouble.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "For example, \"all i could do was think about that extra slice of pizza, I was unable to concentrate on the teacher's explanation of the assignment\" (the concern you would write on the note card is Inability to concentrate."
+        },
+        {
+          "response_id": "B",
+          "text": "You are watching her handle everyday school hiccups like they are high stakes, and it leaves you torn between trusting that she is just intense and fearing you might miss something that needs real support. What changes have you noticed in sleep, appetite, or avoiding school?"
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds really scary to watch as her mom, especially when you see how hard she pushes herself and how quickly it turns into tears and panic. Your worry that it could break her makes a lot of sense, and it feels so heavy not knowing what kind of help to reach for."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_22",
+      "source_dialog_id": "counsel_chat | 89",
+      "source_row_index": "730",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  A few years ago I was making love to my wife when for no known reason I lost my erection, Now I'm In my early 30s and my problem has become more and more frequent. This is causing major problems for my ego and it's diminishing my self esteem. This has resulted in ongoing depression and tearing apart my marriage. I am devastated and cannot find a cause for these issues. I am very attracted to my wife and want to express it in the bedroom like I used to. What could be causing this, and what can I do about it? \n\n Therapist:  First step always is to do a medical rule out so that you're sure the problem is psychological and emotion based, not a medical condition which requires care and attention. If you are medically clear in the reasons for losing your erection, then reflect on what may be creating a loss in confidence in either who you are and what you're doing with your life, or whether your wife has these sort of problems within herself. Often a problem transfers ownership of who shows it. If you are a sensitive person its possible your erection problem reflects your wife's insecurities and self-doubt. If she is someone who is reluctant to talk about feeling unsure then in a certain way by you showing a problem, she can avoid looking at herself. There may not be a direct cause such as usually exists in a medical problem. Medicine looks for symptoms to treat. Our emotional lives are much more indirect.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "If you feel stress at work or are unhappy in the place you live, for example, then your frustration may show up in your sex life."
+        },
+        {
+          "response_id": "B",
+          "text": "When it happens “for no reason,” it can turn sex into a performance test where you feel responsible for proving your desire and worth, and that pressure itself can keep the cycle going. Have you noticed what thoughts or moments usually come right before you lose it?"
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds crushing and scary, especially when you feel so attracted to your wife and still can not rely on your body the way you used to. It makes sense your confidence and mood are taking such a hit."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_23",
+      "source_dialog_id": "counsel_chat | 886",
+      "source_row_index": "8390",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  I believe it is wrong for men to look at inappropriate content. The father of my child has agreed to respect my beliefs. His co-worker sent him an inappropriate video. He got mad because he does not think he should tell his friend to not send him things like that. \n\n Therapist:  In my book, this is a boundary issue. Although you do not like inappropriate content, it is not up to you what your child's father looks at or what his friend sends him.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "It is really hard not to monitor other people's lives, but in the end, your rights begin and end with you."
+        },
+        {
+          "response_id": "B",
+          "text": "It seems like you’re asking him to actively protect the agreement you made, while he sees pushing back at his coworker as risking conflict he cannot control."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds really upsetting and disappointing, especially after he agreed to respect your beliefs. It makes sense you would feel hurt and uneasy."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_24",
+      "source_dialog_id": "counsel_chat | 1837",
+      "source_row_index": "17699",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  It's really hard to not have negative feelings about friends who don't put any effort into nourishing our relationship. \n\n Therapist:  Interpersonal relationship (either positive or negatives) need to or more persons who give and receive: attention, dedication, time and communication.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "But what makes friendships special is that they last trough time, at least with those who we call our true friends, those who know us well and whom we have a special connection and those from whom we disconnect at times, without fear of losing them."
+        },
+        {
+          "response_id": "B",
+          "text": "It makes sense that repeated one-sided effort starts to feel less like generosity and more like being taken for granted, which challenges how you see the friendship and yourself. When you notice that pattern, what tells you whether to address it directly, shift your expectations, or step back to protect your energy?"
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds really painful, like you’re pouring care into something that isn’t being held in return, and it leaves you feeling hurt, disappointed, maybe even angry. It makes sense to have those feelings when you’re not met with effort. What emotions come up most strongly for you when this happens?"
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_25",
+      "source_dialog_id": "RED | 105132 - depression",
+      "source_row_index": "2113",
+      "turn": "4",
+      "final_agreed_label": "Open Question",
+      "context": "Client:  How many guys go up to a girl on a daily basis thinking that the interaction, or potential positive relationship, is going to go well only to have been rejected many times ? I've seen people who always seem to be happy all the time get rejected plenty of times. I've also seen plenty of suicidal people in loving relationships with others. \n\n Therapist:  I think they probably just mean that by thinking about something in that way, you're not making any progress. Positive situations are usually a result of actions, so If you think about anything too much and don't act on it, it has a lot higher chance to go badly because nothing is happening at all. Better to try and fail than to do nothing, because you might miss a great opportunity :) \n\n Client:  > Positive situations are usually a result of actions, so If you think about anything too much and don't act on it, it has a lot higher chance to go badly because nothing is happening at all. All this time of not speaking to women due to no longer thinking its worth it and with the relative ease of finding information on the internet I fear approaching women due to insecurities they have that may result in law enforcement.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "Yeah, it's definitely harder to approach people now than it was before, but I don't think anything inherently bad could happen as a result... What kind of situations do you think would be viewed as harassment?"
+        },
+        {
+          "response_id": "B",
+          "text": "It sounds like you are not just worried about rejection, you are weighing a much higher perceived cost where one awkward or misunderstood approach could escalate into serious consequences. When the risk feels that asymmetric, stepping back can seem like the only responsible choice."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds really frightening, like you are carrying a constant fear that even trying to connect could suddenly turn into something serious and punishing. I can hear how worn down and discouraged you feel after so long holding back, and how much anxiety those insecurities stir up."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_26",
+      "source_dialog_id": "counsel_chat | 858",
+      "source_row_index": "8148",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  I'm obsessing about a terrible breakup. Everything is a constant reminder. How do I move on? \n\n Therapist:  Let yourself know what you feel.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "There is no timetable or known length of how much time a particular person requires in order to feel that the dissolved relationship is behind them."
+        },
+        {
+          "response_id": "B",
+          "text": "It seems like your mind keeps returning to the breakup because it is trying to make sense of what happened, but the reminders around you do not give you any real relief or closure."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds so painful and exhausting, like you cannot get a moment of peace from the reminders. It makes sense you feel stuck right now, and I am here with you."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_27",
+      "source_dialog_id": "counsel_chat | 1679",
+      "source_row_index": "16274",
+      "turn": "2",
+      "final_agreed_label": "Support",
+      "context": "Client:  I have been with a guy for 4 years, he's a great guy and we also have a son together. The problem is that I'm in love with a guy that I've been talking to for about 2 years but I've never met him in person. Honestly I'm bored with the relationship I have with the first guy and he makes want to go after the second guy, I don't know how to tell him that. What should I do? \n\n Therapist:  Hi there. Wow, this sounds like a sticky situation; however, I'm here to help guide you through this decision. First and foremost, you must ask yourself, if you ever loved your sons' father or was it a situation to where you two got pregnant and stayed together for the child. It's very common to stay with your partner when a child is involved regardless, if love is involved or not because \"it's the right thing to do. \" Right? Well, not entirely. Although, staying with your partner because you have a child together may seem right, in fact, it hurts the child in the long run. If you are not love with your partner, you will show distance, unhappiness, sadness, possibility of frequent arguments and cheating. When a child grows up in the home and witnesses these types of emotions & behaviors it is unhealthy as he/she will expect their own relationships to be such. As a responsible adult, you are supposed to be there to shape and model the future for your child. Just remember, what you do, your child will model. Secondly, do not sell yourself short from love. Everyone deserves to be happy and to have someone to share their love and intimacy with. However, being in love with someone you have never seen before can be very risky. Honestly, that sounds like lust and the longing of love. Humans have needs and when people are unhappy in their current relationship, they often seek out what they need. If you decide to pursue the second relationship, I would suggest setting up an outing with a friend or two in order to get to know this person as there are a lot of scammers these days. Finally, I am not convinced that this has anything to do with choosing between two guys. This seems as if you are making a decision to end the relationship with your child's father or not. You should ask yourself, if you were in love with your child's father first off. If you were, you would have never sought after love.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "I hope this was helpful for you and I hope I was able to shed a different light on your situation."
+        },
+        {
+          "response_id": "B",
+          "text": "You are balancing stability for your son and a “great guy” against a pull toward novelty and feeling alive, and you are unsure how much is boredom versus real incompatibility."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds really heavy, juggling loyalty to your son’s dad with feeling bored and pulled toward someone new, and not knowing how to say it."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_28",
+      "source_dialog_id": "counsel_chat | 1514",
+      "source_row_index": "14744",
+      "turn": "2",
+      "final_agreed_label": "Simple Reflection",
+      "context": "Client:  I have a friend that who I used to be in a relationship with. It was brief and turned into us being just good friends.\n\nI spent the weekend with him and it upset my boyfriend. Was i wrong? \n\n Therapist:  Depends on your definition of \"wrong\" on this one. Was it objectively wrong to spend the weekend with a good friend, who also happens to be an ex? Probably not. But, it upset your current boyfriend, and he is entitled to his feelings if you are in a relationship with him.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "He may be out of line if he assumes that anything happened between you and your ex that would compromise the relationship, however your boyfriend being upset might also mean that he wanted to spend that kind of weekend with you and did not get to do that."
+        },
+        {
+          "response_id": "B",
+          "text": "It sounds like you are holding two truths at once: in your mind this weekend was about maintaining a genuine friendship, and in your boyfriend’s mind it can read as blurred boundaries or a threat because of the history. The real question may be what kind of agreements and reassurance you both need going forward."
+        },
+        {
+          "response_id": "C",
+          "text": "It makes sense that you feel torn and maybe even guilty, because you care about your boyfriend and you also value this friendship. Hearing that he was upset can sting and bring up a lot of self doubt. At the same time, you were spending time with someone you see as a friend, not trying to hurt anyone."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_29",
+      "source_dialog_id": "counsel_chat | 1731",
+      "source_row_index": "16847",
+      "turn": "2",
+      "final_agreed_label": "Complex Reflection",
+      "context": "Client:  I'm a teenager and I get these really intense mood swings. My mood will be really high and I'll think of something that I want to do. When I start to make it happen I get irritated by other people if they intervene. Then if the thing I wanted to do doesn't work out, I have these tendencies to blame other people for it not working out. Can you explain what's going on? \n\n Therapist:  Teenagers are prone to mood swings due to developmental and hormonal changes that are rapidly and intensely occurring in your body and mind - so some of this happens to many people in your stage of development. You are not at all alone. You've taken the first and very important step in regulating your moods by just identifying that you are having these intense changes instead of being completely submerged in them and unaware! The more you are able to be a witness to your emotions and thoughts, the more you can learn to manage them. Your question offers several clues for strategies that you can try - for example, identify the warning signs for becoming irritated and plan a response, such as taking a deep breath, informing the person you are becoming irritated and need some space, or find a distraction temporarily like listening to music or going for a walk. Since you are aware of blaming others for things not working out, you can proactively make a personal commitment to taking ownership or personal responsibility by just thinking about it and practicing thoughts such as \"I am responsible for my efforts\" and \"Blame is not helpful for anyone\" and other thoughts that you believe and can repeat related to this insight.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "When you practice thinking more rational, healthy thoughts, you are actually rewiring your brain, so practice is key!"
+        },
+        {
+          "response_id": "B",
+          "text": "Your brain is chasing momentum, so interruptions feel risky, and when plans stall, pinning fault elsewhere protects motivation but undermines learning and relationships."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds really intense and frustrating. It makes sense you’d feel irritated and disappointed. You’re not alone, and your honesty here is brave."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_30",
+      "source_dialog_id": "counsel_chat | 651",
+      "source_row_index": "6218",
+      "turn": "2",
+      "final_agreed_label": "Advise with Permission",
+      "context": "Client:  My son stole my debit card and lied about it. It's not the first time he has lied. I don't know what to do anymore. I don't know if I should punish him or make him do something. I've tried talking to him and asking if anything was wrong. I have grounded him, but nothing works. What should I do? \n\n Therapist:  Hi Enid, You sound like a sensitive parent; I like that you talked to your son to see if anything is wrong. There is some key information here (I don't know your son's age, whether he spent any money, whether he put the card back, or how many times he's stolen), and my answer might be different depending on those details, but I'll give you my thoughts. I see it as every child's job to figure out the rules and find where their power is in the world. In order to accomplish that, many of them test limits. \"What can I get away with? \" is a question they have to find the answer to. If a child knows the rules, they're much more likely to not test limits (because they already know the limits). So, part of testing limits is experimenting with stealing and lying. Not all kids steal, but I would say pretty much every child lies at some point. It's a normal behaviour, and most of the time it's about small things that don't matter and we don't even find out. Stealing a debit card is a bit more serious, and I'm not surprised he lied about it. If you absolutely know that he took it, it's okay to tell him that you believe he did this thing and also lied about it. It's appropriate to give a consequence for this type of behaviour, so that the child doesn't do it again. The consequence should be as natural and logical as possible. The behaviour (stealing) was harmful to you, so doing you a favour with extra chores might be a good idea. It's funny, because as parents we try to tell our kids that lying is bad, but they know they'll get a consequence if they tell the truth so there are natural deterrents to being honest (we don't want people to know our mistakes). It's a dilemma. If you really want to focus on the lying part, you can tell him that you won't give him a consequence for the lying if he decides to come clean with the truth within one day. That gives him incentive to come to you with truth. It sometimes works with kids to give them a chance to come clean and then reward them for telling the truth. You can set your child up for success and train them to tolerate honesty. Put a cookie on the counter. Tell your child to take the cookie at some point in the day. Then ask them later if they took the cookie. You're making honesty fun. Kids love games. Basically, there's as much power in rewarding the positive behaviour as punishing the negative. If this is the first serious offence for your son, don't make a big deal of it; consequence him and see if he learns.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "If it's a pattern, that's different and you may want the input of a therapist."
+        },
+        {
+          "response_id": "B",
+          "text": "You are trying to protect trust and boundaries, but each consequence feels powerless when he keeps choosing lies anyway."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds heartbreaking and exhausting, especially after you have tried so hard and nothing changes."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_31",
+      "source_dialog_id": "RED | 236570 - depression",
+      "source_row_index": "3538",
+      "turn": "4",
+      "final_agreed_label": "Simple Reflection",
+      "context": "Client:  This makes it really hard for me to keep a job cause I won't learn it fast enough and feel like I don't deserve to be there cause it's just a waste of money to pay a useless employee. When I get a job it'll make things worse having all my time taken up by a shitty job and having to base my life around it. \n\n Therapist:  When you start thinking about how you aren't learning quickly enough or that you aren't good enough, pretend you're talking to someone else. You surely wouldn't tell someone to quit and that they are worthless after only trying for a short time. Always try to treat yourself at least as nice as you would treat someone you loved. Always reaffirm yourself with positives when you feel your mind flooding with the negatives. \n\n Client:  Problem with treating myself how I'd treat someone I \"love\" is a little bit of a problem cause it's usually a cold indifference or I'm a sarcastic asshole. But I do understand what your saying and can try it out.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "When your mind is going all batshit and asshole on yourself, try saying it aloud."
+        },
+        {
+          "response_id": "B",
+          "text": "So when you “treat yourself kindly,” it still comes out as distance or sarcasm, not comfort."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds painful, like warmth is hard to access and sarcasm becomes your armor. I really hear you."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_32",
+      "source_dialog_id": "RED | 256817 - depression",
+      "source_row_index": "4006",
+      "turn": "4",
+      "final_agreed_label": "Support",
+      "context": "Client:  Not because they're not trying to help. They just don't really say the right things. They're things that would work if I was just sad because I failed a quiz or dropped my ice cream or something. Telling me things will get better doesn't help me when I'm talking about deep rooted issues and being depressed. \n\n Therapist:  it sounds like you could use a few new friends. even just one. when most people say that everyone thinks that means to drop your current friends and move on to new people. \n\n Client:  I did have one and she just friend broke up with me yesterday which I've been taking really really hard. Like maybe I wasn't appreciative enough or came to her waaay too often. I feel like I just annoyed her with too many emotional breakdowns. \n\n Therapist:  damn man. i understand how that can feel. i just got relationship broke up with not too long ago, and i lost someone who i talked to about everything. i feel really empty now. i keep trying to fill my empty feelings with something that will make me happy but it won't last.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "i can relate to you and i'm here for you if u need me bro."
+        },
+        {
+          "response_id": "B",
+          "text": "You’re trying to make sense of her leaving by blaming yourself, like needing support became “too much” for someone."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds so painful and raw, losing her like that, and it makes sense you’re blaming yourself."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_33",
+      "source_dialog_id": "counsel_chat | 1843",
+      "source_row_index": "17848",
+      "turn": "2",
+      "final_agreed_label": "Support",
+      "context": "Client:  I would like to be able to have more positive relationships in the present. \n\n Therapist:  Take one day at a time! Each day do things that make you happy, moves to a positive place, focusing on the future, give you a sense of fulfillment and accomplishment. Journal at the end of the day of how well you did that day in focusing on these things. Each day should be a step better than the previous day. You will have days that you didn't do as well. that is human and OK. Just get back on track the next day. At the end of the week, review how well you did and give your self a grade. If did well, you deserve ice cream, etc. If not so good, OK. tell yourself next week \"got to focus one day at a time\". You can do it.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "it takes practice but will get better each day, I wish you happy days and happy future."
+        },
+        {
+          "response_id": "B",
+          "text": "When you say “in the present,” it sounds like you want connection now, not more self-improvement homework first."
+        },
+        {
+          "response_id": "C",
+          "text": "Wanting more positive relationships right now feels really important, and it can hurt when that connection is missing."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_34",
+      "source_dialog_id": "counsel_chat | 514",
+      "source_row_index": "4777",
+      "turn": "2",
+      "final_agreed_label": "Emphasize Autonomy",
+      "context": "Client:  I was in a car accident and totaled my car. I gave up my job of nine years to pursue school full-time to better myself. I failed a class, and my boyfriend that I live with thinks I'm stupid and wants to break up with me. I have nowhere to go, and I feel like I'm losing everything. \n\n Therapist:  When we feel overwhelmed by life situations, it is important to understand where the feeling is coming from. Once we understand the source, it is important to normalize the situations that got us there and find balance in our lives. First, car accidents are common, and since they are accidents they are not a reflection of us. When we have an accident we feel anxious, worried, and may have some trauma after the accidents. If you have been experiencing anxiety since the car accident, talk to your doctor or therapist about it. Second, a lot of people fail classes, tasks, deadlines, etc. but they don't give up on their goal. We have to remember that failing is part of the learning process, and having the courage to try again is what gives us determination and character. Remind yourself what motivated you to leave your job, and the courage and determination that took to do so, then channel that energy back into school. Third, when we have problems in our relationships, is helpful to look for ways to improve communication, discuss our concerns and how we want to resolve them, but it may be that the relationship needs to end if there isn't enough interest in one of the parts or if there's verbal or emotional abuse. Consider talking to your boyfriend and set some boundaries regarding appropriate communication. At all times: focus on being kind to yourself and improving your self-esteem: increase self-care activities, do more things that you enjoy, meditate in what gives you peace and make an effort to have more of that in your life.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "At the end, you are the one in control of your life, and you determine who you become."
+        },
+        {
+          "response_id": "B",
+          "text": "It sounds like several safety nets vanished at once, so one setback now threatens housing, schooling, and your sense of worth."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds terrifying and heartbreaking, like everything hit at once and you are left feeling scared and alone."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_35",
+      "source_dialog_id": "counsel_chat | 142",
+      "source_row_index": "1128",
+      "turn": "2",
+      "final_agreed_label": "Emphasize Autonomy",
+      "context": "Client:  I'm in my mid 20s with a husband and children. I love my family, but I feel like I've lost my identity, and I don't know who I am other than a mom and wife. At times, all I can think is what I gave up and how I feel unhappy and trapped, but I know I'd feel like worse without them. I loathe myself at times. I have an amazing life, so why can't I just enjoy it? \n\n Therapist:  Good for you on being sensitive to your human need for personal evolution. Wife and mother are meaningful positions. And in your case, in order to feel your own growth, other areas of who you are would like your attention. Give yourself time to allow your interest to wander in order to find the area of growth which will satisfy you.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "Just like you know now that you'd like more than your current situation, trust yourself to know you will also know when you've arrived at another road you'd like to take for your own happiness."
+        },
+        {
+          "response_id": "B",
+          "text": "Part of what hurts seems to be the tug of war between devotion to your family and the quiet grief for paths you paused, then judging yourself for even noticing that loss. When everyday life consumes choice, identity blurs. What parts of you feel most starved for attention?"
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds so heavy, loving your family deeply while feeling lost, trapped, and grieving parts of yourself you set aside; even with an amazing life, it makes sense to feel torn and self loathing, and you deserve a lot of gentleness with that pain."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_36",
+      "source_dialog_id": "counsel_chat | 1147",
+      "source_row_index": "10756",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  When my boyfriend gets in a snit, he gives me the silent treatment for days. When I ask what is wrong, I get nothing: no reply, no phone call. If he does reply, it is something very sarcastic and hurtful. He never admits he is wrong and never apologizes. \n\n Therapist:  This has to be very difficult to endure. It's pretty common for members of a couple to have different ways of resolving conflict. Very often, one person wants to deal with the conflict right away or shortly thereafter and the other person wants to wait. One thing that sometimes works is to consider having a conversation when you are not upset with one another about taking some sort of timeout and setting a timeframe for something like \"I cannot talk about this now, but we can talk about it in two hours. \"My best guess is that your boyfriend is triggered by some previous relationship, either romantic or in childhood. If he is aware of something that he thinks or feels when you ask him to resolve conflict or to discuss it, it would be good to know what that is. It could even be that he's learned to handle conflict that way. Something else you could try is to have a conversation where you each discuss what is acceptable for what is acceptable for each of you during an argument and what is not. These sorts of discussions can be very difficult and you may benefit from working through them with a mental health professional who has some experience working with couples. As far as what you can do now, perhaps you can remind yourself that these things have worked out before, that you love him and believe that he loves you, or some other statements that are true for you. You may also consider finding ways to soothe yourself.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "For example, you may find that you like certain outdoor activities or reading a certain type of book or something else that gives you pleasure."
+        },
+        {
+          "response_id": "B",
+          "text": "It sounds like you are left doing all the work of repairing things, chasing clarity while he controls the distance, and the sarcasm lands like punishment, not problem-solving."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds so painful and lonely, being shut out for days and then met with sarcasm when you reach for connection. It makes sense you would feel hurt, frustrated, and unseen."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_37",
+      "source_dialog_id": "RED | 206749 - offmychest",
+      "source_row_index": "7932",
+      "turn": "4",
+      "final_agreed_label": "Closed Question",
+      "context": "Client:  This might sound really strange, but I have a kind of problem where I put off eating. I'll skip breakfast, sometimes skip lunch or only have a small lunch, and/or only have a small meal in the evening even, Sometimes I will go to bed hungry. There's several factors involved, but sometimes I'll get stuck in a pattern of feeling weak and not eating because of it, then feeling weaker. \n\n Therapist:  It's called anorexia. Even if you may be a larger sized person, this \"habit\" is still anorexia. It's easy to relapse back into the \"habit\", I'm still struggling with it. Every time my depression hits, I stop eating again. Seek help before it's too late. \n\n Client:  Are you sure? I'm not concerned about my weight or how others see me. Don't you need to have a \"desire to be skinny\" (or whatever) in order to be anorexic? I'm a middle aged male and I've never dieted to a regime or anything. Sorry to hear about your long recovery. \n\n Therapist:  No you don't have to have a desire to be skinny. I sure as hell didn't want to.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "Are you depressed about anything or is it that you just fall into the headspace of not eating?"
+        },
+        {
+          "response_id": "B",
+          "text": "You’re trying to make sense of this without forcing it into a “skinny, dieting” box, since your pattern seems more about low appetite and energy spirals."
+        },
+        {
+          "response_id": "C",
+          "text": "It makes sense you feel unsure and a bit alarmed, especially since weight is not your focus; that sounds scary."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_38",
+      "source_dialog_id": "counsel_chat | 505",
+      "source_row_index": "4682",
+      "turn": "2",
+      "final_agreed_label": "Closed Question",
+      "context": "Client:  I've been dealing with this for years. My mom thinks I'm overly emotional and refuses to offer any help, like therapy or seeing a doctor. She's seen me when I'm having a panic attack and just said I was faking for attention or that I'm a hypochondriac. I just want to get better. \n\n Therapist:  How old are you? Are you old enough in your State to have therapy without your mother's consent? Your mom's attitude toward you may be one significant reason on why you feels so much tension in the first place. Don't let her opinions and beliefs get in the way of what you know about yourself. Are you in school and does that school have a guidance counselor?",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "Would you talk with that person about your difficult getting your mom to retain helping services for you?"
+        },
+        {
+          "response_id": "B",
+          "text": "Being dismissed by the person controlling access to care leaves you stuck: you want help yet risk more invalidation. What confidential routes feel accessible?"
+        },
+        {
+          "response_id": "C",
+          "text": "It sounds painful to have panic dismissed by your mom. Feeling unseen like that hurts. You deserve care, and your wish to heal is brave."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_39",
+      "source_dialog_id": "counsel_chat | 548",
+      "source_row_index": "5183",
+      "turn": "2",
+      "final_agreed_label": "Complex Reflection",
+      "context": "Client:  I constantly have this urge to throw away all my stuff. It's constantly on my mind and makes me feel anxious. I don't sleep because I'm thinking about something I can get rid of. I don't know why I do it. I started years ago when I lived with my dad then I stopped when I moved in with my mom. Years later, it has started again. \n\n Therapist:  Since you wrote that you noticed a change in your throwing away urge when you changed with which parent you lived, would you feel that throwing away things is connected to wanting to be done with certain areas of influence with either parent? Play in your mind with the metaphor of \"throwing away\" and whatever associations you feel toward this. Are you feeling alarmed or freed, by throwing away things? I'm only suggesting these, not telling you that they apply necessarily. Anxiety comes up when people feel helpless to manage a meaningful part of their lives. So pay attention whether your stuff represents difficult scenarios or phases of your growing up years. Possibly you are trying to rid yourself of painful feelings which were part of your early years' relationship with either parent.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "Basically, sounds as though you are trying to establish a clearer sense of who you are and the throwing away part is a means of discovering who you are, once all the clutter is released."
+        },
+        {
+          "response_id": "B",
+          "text": "It seems like throwing things away has become your way of creating control and relief when something in your environment feels loaded or unresolved, and the fact that it began with your dad, eased with your mom, then returned suggests the urge tracks certain dynamics, not the objects themselves."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds exhausting, like your mind never gets to rest, even at night, and the anxiety just keeps pressing for relief. Not knowing why it’s happening can feel scary and confusing, especially since it shifts with where you’re living."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_40",
+      "source_dialog_id": "RED | 217789 - depression",
+      "source_row_index": "3452",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  Recently though I've found myself feeling distant and just generally annoyed by everyone, even people I generally like. I've been feeling lonely and depressed a lot, and don't really feel like I have anyone I can confide in. It feels like I'm falling into depression again and I'm making people around me also feel miserable as a result, which also isn't helping my own mood. \n\n Therapist:  If you feel like you're relapsing, please don't hesitate to contact a professional. Also, try talking about how you're feeling more often.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "If these people care about you, they will understand and help you get through it!"
+        },
+        {
+          "response_id": "B",
+          "text": "It seems you are pulling back to protect others, but that isolation then deepens the spiral."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds heavy and lonely, feeling depressed and irritable while worrying you’re dragging others down too."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_41",
+      "source_dialog_id": "RED | 141594 - depression",
+      "source_row_index": "2722",
+      "turn": "2",
+      "final_agreed_label": "Affirm",
+      "context": "Client:  I always fell back down, though. I managed to pick myself u, to keep pushing, to keep myself trying hard to overcome shit. But, in the end, I always fall back down. I fall down harder each time. All it's gonna bring is some pain and some more pain and then gaint dissapointemnt. \n\n Therapist:  Please ... never stop trying. Never stop this fight. I know, it sucks that you never get to be happy for long, that you always fall back down. But please, don't quit. This is the fight of so many people, so many of us facing the same struggle. It's our glorious fight.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "And I sincerely believe that those moments of happiness we do get are worth all the rest bad times."
+        },
+        {
+          "response_id": "B",
+          "text": "Each time you push back up and still crash harder, it starts to feel like effort only buys more pain, not progress."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds so exhausting and heartbreaking, like every time you get up, the next fall hurts even more."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_42",
+      "source_dialog_id": "counsel_chat | 1096",
+      "source_row_index": "10267",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  I have cheated on my husband of five years roughly ten times. I pretend we aren't married at my work. Recently, he has caught on, but I lie to cover it. He use to talk to girls online, but I have caught myself constantly having a affair. \n\n Therapist:  It may be helpful to have this emotionally impactful conversation in the context of couples therapy. Whether or not you should get a divorce is not the first question that comes to mind for me, but more along the lines of do you want to be together and what kind of relationship do you want to create? For some people, polyamorous relationships (those involving more than two people) are acceptable. This does not work for everyone, but if each of you agree that that is okay, it may work for you and your husband. If it is something that you are both open to, it is often beneficial to have more than one discussion about the details of what is acceptable for each of you. If you want to be devoted only to each other, what does that lifestyle look like for each of you? What can you start or stop doing right now to move your relationship in that direction? Neither of you can make the other partner change. That does not mean you cannot talk about what each of your goals are together and support each other in working toward those goals you have for yourselves. Sometime having discussions like these is easier when there is a structure and/or someone in the room (like a therapist) who can help keep the conversation on topic and work on having each of you communicate in a way that expresses your wants, wishes, and desires in a way that is not blaming of your partner. If either of you wants a divorce, that could be part of the discussion.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "Divorce is not the only choice here, depending upon what each of you wants and is willing to accept, learn, and grow from as it relates to yourself and your partner."
+        },
+        {
+          "response_id": "B",
+          "text": "It sounds like at work you are trying to step out of the “wife” role, and lying becomes a way to protect the marriage you have while still keeping the freedom you are reaching for, even as trust erodes."
+        },
+        {
+          "response_id": "C",
+          "text": "It sounds like you are carrying a heavy mix of guilt, fear, and maybe even confusion about why this keeps happening, especially now that he is catching on and you feel pulled into more lying. That is a lot to hold alone."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_43",
+      "source_dialog_id": "counsel_chat | 447",
+      "source_row_index": "4168",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  I feel too scared to meet people I don't know - even relatives. I don't ever raise my hand or talk in school. I feel like no one understands. How can I handle this? \n\n Therapist:  Congratulations on your courage to ask this question! This shows you are willing to engage with other people, just not in all situations, especially the in person ones. Start by \"meeting\" yourself. Reflect as thoroughly as possible as to what you imagine will be the outcome of meeting others or of speaking up during a class. Some people are afraid of being criticized or judged by other people, or do this to themselves inwardly. If you are judging or criticizing yourself to be less worthy of having opinions or views or of being who you are, than others, then the thought of actually placing yourself in this situation, would feel intolerable. One way to move out from this position of feeling less than others, is to recognize that these feelings are inside of you. Then it is possible to know at least on an intellectual level that it is not true that any one person is superior to another. All the people whom you are afraid to meet, also have their own insecurities. We are all equal in worth and in having blindspots about ourselves. Also, it is possible that you are naturally shy and may be expecting more from yourself than is reasonable, in terms of a standard about meeting others. You may have a few fears of being judged unfairly, you may also simply not enjoy being around people very much. Be aware to not push yourself beyond your natural limits.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "Overcoming fears of being judged is different than forcing yourself to do what is against your basic nature."
+        },
+        {
+          "response_id": "B",
+          "text": "It sounds like you want to join in but expect judgment, making interactions feel risky. Could one planned hello to a trusted relative be doable?"
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds so scary and isolating, and I hear how alone you feel; your courage in sharing this really matters."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_44",
+      "source_dialog_id": "counsel_chat | 546",
+      "source_row_index": "5169",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  When I go to school, I feel like everyone is judging me, even my friends. I get overwhelmed which these thoughts and sometimes cannot get out of what I call a deep hole of thoughts. I barely go to any of our school dances because of all of the people. Not even when I am completely alone do these thoughts go away. I still feel like people can see me and are judging me. \n\n Therapist:  It sounds like a couple of things are going on here; you are noticing yourself feeling judged by the people around you and that you are avoiding social activities and in addition to this you have intrusive thoughts that you are being judged, even when alone. It sounds like these thoughts are pretty distressing and you are wondering what is happening to you. Many people who come to therapy experience intrusive and distressing thoughts of various kinds, which often influence their behavior in ways that they may not like, such as leading them to isolate.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "In therapy, you may be able to gain insight into the nature of your distress as well as learn ways to cope and eventually alleviate this distress so that you can have satisfaction and security in your life and relationships."
+        },
+        {
+          "response_id": "B",
+          "text": "It seems like your mind is treating school and crowds as if they are constant “evaluation zones,” so even normal moments with friends start to feel risky, and avoiding dances becomes the only way to get relief. Then when you are alone, the alarm does not switch off, which can make it feel inescapable."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds really exhausting and scary, like you cannot get any relief even when you are by yourself. Carrying that sense of being watched and judged all day would leave anyone feeling overwhelmed and trapped in that deep hole of thoughts."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_45",
+      "source_dialog_id": "RED | 305655 - offmychest",
+      "source_row_index": "8779",
+      "turn": "4",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  My mom never knew what to do with my hair. I watch curly hair tutorials on YouTube but I suck at imitating them and I suck at rocking this hair. I used a lot of miss Jessie's hair products. I want to embrace my hair. \n\n Therapist:  Have you seen the Irish dancers, with beautiful blonde curly hair? The way you describe your hair it looks the same to me. \n\n Client:  Thank you for your response. I just looked them up. They do have beautiful ringlets. Very different from my hair though. My hair is almost exactly the same as the actress Quintessa Swindell. She sports it way better but that's pretty much what my hair looks like aside from the color. \n\n Therapist:  O she has cute hair.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "If people notice your hair, because you have a lot of hair, doesn't necessarily mean they don't like it."
+        },
+        {
+          "response_id": "B",
+          "text": "Comparing it to Quintessa gives you a clear picture, but it also sets a high bar that makes learning your routine feel like failing."
+        },
+        {
+          "response_id": "C",
+          "text": "It makes sense you feel frustrated comparing yourself to her, yet I hear a real tenderness in how much you want to embrace your hair."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_46",
+      "source_dialog_id": "counsel_chat | 563",
+      "source_row_index": "5275",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  I have a lot of issues going on right now. First of all, I have a lot of trouble sleeping at times, while other nights I sleep too much and still feel quite tired. I'm also noticing increased irritability and experiencing anxiety attacks that last for hours. Is there something wrong with me and if so what should I do? \n\n Therapist:  It sounds like you are noticing yourself becoming overwhelmed with anxiety, feeling more irritable, and struggling to sleep consistently. There are many possibilities, in regards to what may be contributing to these things you are noticing, and a competent therapist may be able to help.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "In therapy, you may be able to gain insight into these experiences as well as develop strategies for coping with and eventually alleviating anxiety, irritability, and inconsistent sleep."
+        },
+        {
+          "response_id": "B",
+          "text": "When sleep swings between too little and too much and you are still exhausted, it can start to feel like your body is not cooperating, which makes the long anxiety episodes and irritability harder to manage. What has changed recently in your life or routine?"
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds really exhausting and scary, especially when your sleep is so unpredictable and the anxiety attacks last for hours. It makes a lot of sense you would wonder if something is wrong with you."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_47",
+      "source_dialog_id": "RED | 4864 - Anxietyhelp",
+      "source_row_index": "103",
+      "turn": "4",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  So, the other day I was explaining to my friend about the fact I have these moments where I think about something horrible, something that hasn't happened but COULD happen, and it makes me freak out a little, to the point I have to repeat to myself \"It didn't happen. Several times before I can be calm. I know I could google this, but human interaction is more informative than reading a webMD. \n\n Therapist:  Those are Intrusive thoughts. People with anxiety have them but having them doesnt mean you are having a panic attack or have an anxiety disorder. If it is disrupting your sleep , daily activities or health, then maybe look into it with a professional. (Dr. Google and his online associates dont tive definite diagnoses) \n\n Client:  Thank you for the reply and info. They definitely effect my sleep at points, and literally bring me to a stop in whatever I'm doing. They come almost at random and are literally worse than any nightmare i've had. Usually it's images of family suffering or pets being horribly injured. I wish I knew why I had these, because it makes me think i'm messed up for even being able to think of this stuff. \n\n Therapist:  You're not messed up, though it might feel that say at times for being able to imagine certain things.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "People just don't always give acknowledgment to them to fuel the bad thoughts and other people don't talk about the horrible thoughts that happen in their mind."
+        },
+        {
+          "response_id": "B",
+          "text": "When the images are about the people and animals you care most about, your mind may be scanning for danger and treating “possible” as “imminent,” so you end up having to neutralize it to keep functioning."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds really frightening and exhausting, especially when it jolts you out of sleep or stops you in your tracks. Seeing images of loved ones harmed can feel so upsetting, and it makes sense you would feel shaken and ashamed."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_48",
+      "source_dialog_id": "counsel_chat | 643",
+      "source_row_index": "6152",
+      "turn": "2",
+      "final_agreed_label": "Advise with Permission",
+      "context": "Client:  She cried because she lost all trust in me. Now I feel disgusting and like my heart just got stabbed, what do I do? \n\n Therapist:  You felt bad when you lied, so you told the truth. I imagine your mom was really shocked and upset - both of those things tell me you are a pretty honest person. It's possible that your mom had a big reaction simply because she has learned that her child, from whom she always assumed honesty, was capable of being dishonest. That's not awesome, but it's not the end of the world. You made a mistake - you'll make more of those in your life, just try not to make the same ones over and over again. It sounds like you and your mom are close so I can see why it would feel so awful to have her distrust you. Since you are a fundamentally honest person, the way back to being trusted is going to be simple, but may take a little time. The \"recipe\" is easy - say what you are doing/going to do; do only that unless change is necessary, in which case you inform others involved, and repeat. And cut yourself some slack. Your mom will recover and so will you.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "It's an important and painful lesson about integrity, but once learned it will serve you well."
+        },
+        {
+          "response_id": "B",
+          "text": "You want to fix it immediately, but rebuilding trust usually means consistent actions over time, not one perfect apology."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds excruciating, like you are flooded with guilt and heartbreak seeing her cry and distrust you."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_49",
+      "source_dialog_id": "counsel_chat | 587",
+      "source_row_index": "5568",
+      "turn": "2",
+      "final_agreed_label": "Emphasize Autonomy",
+      "context": "Client:  When my daughter is stressed about a silly thing from school, she starts crying and freaking out. She is a bright student, always has a 4.0, but I am afraid she is stressing too much. I'm afraid it's going to break her. I don't know if I should get her to a doctor or someone because this is not normal. \n\n Therapist:  I am sorry to hear about your daughter. Many of the youth I see in my practice are going through similar behaviors and concerns. If she feels like she can talk to you about this I think that is a great place to begin. There are many life stressors that youth have to manage and seeing others on social media seems to exacerbate these feelings and can feel like even more pressure to strive for perfection. You may be able to offer her support by listening to and validating her concerns, reviewing all that she has accomplished and praising her for doing her best and not push that she needs to be \"the best. \"If she feels she would like to speak to someone it may be good to find a therapist where she can vent her feelings and find a way to increase her coping skills. She may benefit from additional support outside the home where she can cry, learn to manage her worries and gain skills to triage the expectations of each day.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "She may benefit from skills that would help her to learn that she is enough already!"
+        },
+        {
+          "response_id": "B",
+          "text": "You’re weighing whether this is typical stress or a warning sign, and you don’t want to overreact or miss it."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds really scary to watch, and it makes sense you feel worried she is carrying too much."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_50",
+      "source_dialog_id": "counsel_chat | 1011",
+      "source_row_index": "9524",
+      "turn": "2",
+      "final_agreed_label": "Advise with Permission",
+      "context": "Client:  Every time my partner gets angry for anything, she takes it out on me. Nothing I do is right, and once she's mad, she calls me all kinds of names and is verbally abusive. She says it isn't abuse, it's just angry verbal bashing, and that it's different. It gets worse each time. The names are very vulgar now. \n\n Therapist:  One thing you could try is to talk to your partner when she's not angry about the following:If she's angry, maybe she can talk with you about what she is angry about rather than calling you names. If she gets angry and then calms down a little while later, maybe one of you can take a timeout in the discussion and set a time when you will come back to it. Discuss what it is that you find acceptable for you to do during an argumentDiscuss what it is that you find unacceptable for you to do during an argumentDiscuss what is acceptable for her to do during an argumentDiscuss what is on acceptable for her to do during an argumentYour partner can answer the same questions related to herself and you. I can't emphasize enough how important it is to have this discussion when there is not an argument going on. Perhaps you could mention that you would like to talk about something that is really important and see if the current time is a good time. If not, consider when in the next 24 to 48 hours would be a good time. It may also be helpful to discuss these ideas with a local therapist. The therapist may also be able to help both of you figure out where the anger is coming from and where she has learned to react this way. If it is abuse, it may be even more difficult to have these important discussions.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "It may be helpful for you to see a local therapist by yourself to assess things like physical and emotional safety."
+        },
+        {
+          "response_id": "B",
+          "text": "It sounds like she’s redefining it as “just anger” to avoid accountability, while you’re left walking on eggshells and watching the cruelty escalate each time."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds deeply hurtful and scary, being targeted with vulgar name calling when she’s angry. I’m really sorry you’re going through this, especially as it escalates."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_51",
+      "source_dialog_id": "counsel_chat | 1905",
+      "source_row_index": "18645",
+      "turn": "2",
+      "final_agreed_label": "Affirm",
+      "context": "Client:  How do you know you have the right therapist for you?\n\nHow would I know how to \"train\" my therapist to be able to give me what I need from treatment? \n\n Therapist:  The first thing I would ask yourself is how do you feel when it is time to go to therapy? What do you notice inside your body? Are you sick to your stomach? Neutral? Dreading it? Your body will give you indications as to how safe you feel. Your relationship with your therapist is like any other relationship. you need to feel safe, accepted and understood. You want to see someone who you look forward to sitting across from and feel comfortable talking about whatever is on your heart and mind. What are you preferences? Do you feel more comfortable with a male or female therapist? Does their age matter? What kind of therapy do you want to do? Do you know? If not, you might want to talk to friends or family who have done therapy and ask them what they liked or didn't like, what worked for them and what the process was like. You can always talk to a prospective therapist about all the questions you have (Have they worked with others with your issues? Have they ever been in therapy? Where did they go to school? What kind of training do they have? Etc. ) You may not know in the first session or two if you have the right therapist but pay attention to how you feel while you are there. Your therapist should check in with you and ask how you are feeling. If it's not a good match for you, your therapist should try and help you find someone who will be a good match.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "Your trust and connection with your therapist is the biggest indicator for success in therapy."
+        },
+        {
+          "response_id": "B",
+          "text": "It sounds like you are trying to protect yourself from wasting time by having to direct the process."
+        },
+        {
+          "response_id": "C",
+          "text": "It makes sense to feel unsure and even pressured about “training” them when you just want support."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_52",
+      "source_dialog_id": "RED | 391371 - offmychest",
+      "source_row_index": "9532",
+      "turn": "4",
+      "final_agreed_label": "Closed Question",
+      "context": "Client:  I feel like I'm so difficult to love. I'm scared no one is ever going to love me for me. I know I may feel differently tomorrow... but tonight I just feel sad. \n\n Therapist:  Why do you feel like you're difficult to love? Do you feel like no one meets your expectations? Or do you feel like the people you meet in your life don't have that capacity for deep intimacy? \n\n Client:  I feel like I'm so difficult to love. I'm scared no one is ever going to love me for me. I know I may feel differently tomorrow... but tonight I just feel sad. \n\n Therapist:  Why do you feel like you're difficult to love? Do you feel like no one meets your expectations?",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "Or do you feel like the people you meet in your life don't have that capacity for deep intimacy?"
+        },
+        {
+          "response_id": "B",
+          "text": "Tonight it seems like your mind treats this dip as proof something is wrong with you, even though you know it shifts."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds so heavy and lonely tonight, feeling unlovable and afraid. I am really sorry you are hurting like this."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_53",
+      "source_dialog_id": "counsel_chat | 1015",
+      "source_row_index": "9578",
+      "turn": "2",
+      "final_agreed_label": "Affirm",
+      "context": "Client:  He is verbally abusive. When he gets mad, he just yells at me. At times, I feel scared. \n\n Therapist:  I'm sorry you are experiencing this and I'm glad that you are looking for help and support. I'm not sure of all the details so take from answer what you can. If you are feeling unsafe or scared in your relationship please know that there are non profit domestic violence services that can help and provide you some more support. They can also safely plan with you if you choose to leave. It seems that you might be feeling defeated and if that's the case a lot of domestic violence non profits provide free counseling if you are needing to talk to someone.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "What you are going through can be overwhelming and your are taking the right steps toward healing"
+        },
+        {
+          "response_id": "B",
+          "text": "When his anger turns into yelling, it puts you on alert, like you have to manage his moods to stay safe."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds really frightening and painful, especially when yelling leaves you feeling scared and on edge. You deserve gentleness."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_54",
+      "source_dialog_id": "counsel_chat | 126",
+      "source_row_index": "1061",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  I am going through a divorce. He is extremely angry. He refuses to physically assist me with our teenager daughter. I have no extended family support. Often times, I feel overwhelmed, tired, and joyless. I feel out of control, sad and depressed on a daily basis. I am just going through the motions of life every day. I am in my mid-50s. I have almost 29 years on my job. How can I handle this? \n\n Therapist:  Going through a divorce is often a very low point for the people involved. Are you surprised that your soon to be ex doesn't help with your teenage daughter? Usually patterns and dynamics in parenting are not sudden developments. Is it possible that what you're feeling now is more intensity to the stress of parenting by yourself, not that this is a sudden problem? This is relevant because you may be more familiar and more capable than you're giving yourself credit. The lack of emotional support is definitely stressful. Your parenting skills may still be at the level at which they were prior to the divorce. Take your emotional weariness seriously and reflect on the various ways of stress relief which are available and interest you. Give yourself extra time to rest, nurture yourself and be flexible in finding what feels right for stabilizing yourself. Since you talk about your daughter and help in physical ways, if it is a matter of strength that you need, talk with your attorney so that the child custody agreement includes whatever is physically necessary in the way of strength, in taking care of your daughter.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "The Courts are very good at making effort that the custody agreement offers proper care to the kids."
+        },
+        {
+          "response_id": "B",
+          "text": "You are carrying the parenting and household load alone while managing his anger, so each day becomes survival, not choice."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds unbearably heavy, carrying a divorce, his anger, and parenting alone, with no support and daily sadness."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_55",
+      "source_dialog_id": "counsel_chat | 1233",
+      "source_row_index": "11676",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  As I was growing up, my mother and father always fought. With that, I grew trust issues. I think it's going to affect my relationship now and end it sooner then I want to. I try not to let it affect me, but I can't. \n\n Therapist:  If you thing your trust issues are going to end or affect your relationship it will because you are being baggage from your parents into this relationship. Don't allow their problems to become your problem.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "You didn't mention that your partner in your present relationship have done anything to make you not trust them."
+        },
+        {
+          "response_id": "B",
+          "text": "When conflict was constant at home, it makes sense your mind learned to anticipate betrayal, even when your partner has not earned that suspicion."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds really painful and scary, carrying those fights with you and worrying it could ruin something you care about."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_56",
+      "source_dialog_id": "counsel_chat | 1277",
+      "source_row_index": "12147",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  My wife and I are newly married, about 2 months. We've had some issues surrounding sex, particularly her lack of libido. She's on an anxiety medication, of which diminished libido is a side effect, but I think our issue is also partly one of a lack of intimacy/romance centered around my hectic schedule. Our sex life has suffered as a result. Tonight she made a genuine effort to let me know she wanted sex, which is a big deal. Once things started, she had the most obviously fake orgasm I've ever encountered. I was honest with her about why, and told her that the most important thing to me in sex was knowing that she was legitimately enjoying it. She responded angrily with a complete denial of the faking. I don't know how to broach this subject and have an honest conversation. I think she will continue to lie to me about faking it which will cause our sex life to spiral further. Please help. \n\n Therapist:  You are newly married, you Have a hectic schedule, your wife is on anti anxiety medication. What if you take the focus (hint: pressure) off of her orgasms and focus instead on connecting with one another. You know, like the gestures you each likely made while dating.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "It turns out that these little moments of connection throughout our days are actually foreplay."
+        },
+        {
+          "response_id": "B",
+          "text": "It seems like you’re trying to protect honesty and closeness, while she may be protecting herself from pressure or shame."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds so painful and discouraging, especially after her effort and your hope for honest closeness."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_57",
+      "source_dialog_id": "RED | 402133 - offmychest",
+      "source_row_index": "11658",
+      "turn": "4",
+      "final_agreed_label": "Simple Reflection",
+      "context": "Client:  I'm so mad at myself. Mad that it's been 4 months of quarantine. Mad that there's no distractions, no opportunities to meet new people. Mad. So fucking mad. \n\n Therapist:  Yeah you're alone during the hardest time to be alone right now, but you're doing better than fine. You're going to remember this and never let it happen again, you're going to remember this and appreciate your new partner so much more when they come to you. \n\n Client:  I'm so mad at myself. Mad that it's been 4 months of quarantine. Mad that there's no distractions, no opportunities to meet new people. Mad. So fucking mad. \n\n Therapist:  Yeah you're alone during the hardest time to be alone right now, but you're doing better than fine.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "You're going to remember this and never let it happen again, you're going to remember this and appreciate your new partner so much more when they come to you."
+        },
+        {
+          "response_id": "B",
+          "text": "It seems like the anger at yourself is really about feeling trapped in a situation you did not choose, where you cannot fix it by trying harder, and that loss of options makes everything feel personal."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds like a boiling, trapped kind of anger, being stuck for months with no distractions and no way to reach people. It makes sense you are furious and exhausted, especially turning it back on yourself."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_58",
+      "source_dialog_id": "counsel_chat | 1742",
+      "source_row_index": "16928",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  Often times I find myself thinking scary thoughts and sometimes I even scare myself into thinking that something bad is going to happen to me. Once it starts, the thought continues going through my head and I can't get it out. How can I stop these thoughts? \n\n Therapist:  There are some great thoughts offered by others here. I would just add that typically the most natural response to fearful thoughts is to want to stop, avoid, or get rid of them - which doesn't work if you're really caught up in a cycle of OCD or other form of anxiety. In the long run, the more effective thing to do is the harder and less intuitive option: to have those uncomfortable thoughts on purpose. This may mean writing out in detail what the worst case fear you are thinking of is, and then reading it over and over again until it becomes boring. It may also mean pausing through the course of the day to merely observe all the thoughts going on, and realizing that thoughts are merely thoughts.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "They are not the same as reality, and the unpleasant ones can become a lot less scary when we realize we can coexist with them without them coming true."
+        },
+        {
+          "response_id": "B",
+          "text": "When those thoughts show up, it seems like your mind treats them as warnings, so you try to push them away and the struggle keeps them looping, leaving you feeling trapped and on guard. What usually sets them off?"
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds really frightening and exhausting, like your mind latches onto a threat and will not let go. It makes sense you would want relief when the thoughts feel so vivid and relentless."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_59",
+      "source_dialog_id": "RED | 43822 - depression",
+      "source_row_index": "891",
+      "turn": "4",
+      "final_agreed_label": "Emphasize Autonomy",
+      "context": "Client:  Man, I don't even know how to write something like this out. I wasn't entirely sure if I even wanted to enroll in a 5 year graduate program immediately after graduating. I don't know. I just feel trapped doing something I'm not enjoying. \n\n Therapist:  It may sound like a terribly scary idea, but do you think you could let go of your grad school career, at least for now? I was going to get my PhD in Biology, but found out I was miserable and hated the field while interning the last two years of college. For health reasons, I was forced to let go of my PhD \"dreams\" when I graduated. It was very terrifying to let go of everything I worked so hard for. \n\n Client:  Hey, thanks for replying. I feel as if I like the idea of being a PhD more than the reality of the work or career. Both my parents have advanced degrees and tell me pretty much to tough it out and I sort of feel ashamed to drop out because they were both able to make it through with worse-off family and financial circumstances. Hope you're doing alright, both physically and mentally. \n\n Therapist:  haha. The only happy people seemed the be the principal investigators. haha I think it's commendable that your parents were able to get advanced degrees, but I think you gotta live your own life!",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "I think getting a PhD would be worth it if you are super passionate about what you are studying."
+        },
+        {
+          "response_id": "B",
+          "text": "It sounds like you are weighing your own fit against a family standard, and quitting feels like betraying their sacrifices."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds really heavy, wanting their approval while feeling stuck and ashamed, especially when the PhD image doesn’t match your reality."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_60",
+      "source_dialog_id": "counsel_chat | 1414",
+      "source_row_index": "13649",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  My mom and dad got divorced four years ago. I had to finish out the school year with my dad, and now they are deciding which place is best for me. I can't choose. How can I choose if I love both places? \n\n Therapist:  I don't know how old you are, but depending on that, you may be able to talk with them about spending some time in both places. Even parents who live in different states can do that sometimes. It's not as frequent as spending one week at one house and the next week and the other, but I know that it happens.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "If you can talk with both of your parents about how you would like to live in both places, maybe you can all work out some kind of agreement."
+        },
+        {
+          "response_id": "B",
+          "text": "It makes sense that choosing feels like a loyalty bind, almost a parent-sized decision; could you tell them what daily rhythms, school connections, and support you need so the plan fits you without having to pick a side?"
+        },
+        {
+          "response_id": "C",
+          "text": "It is heartbreaking to feel pulled in two directions when you love both homes. No wonder you feel stuck and pressured. Your love and your feelings deserve gentleness and care."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_61",
+      "source_dialog_id": "counsel_chat | 861",
+      "source_row_index": "8171",
+      "turn": "2",
+      "final_agreed_label": "Advise with Permission",
+      "context": "Client:  She said she needed space after three days of dating, and she got a boyfriend a week later. I still really miss her, and she told me she still likes me. \n\n Therapist:  Given the short amount of time you know this girlfriend, there is no history on which to make a judgment about the likelihood of what she will do next. Certainly she is confusing by telling you she likes you and is with someone new. And not giving you any explanation as to why she made her decision. I'd suggest two possibilities. Speak with her and ask her if she considers opening your relationship with her. Or, simply wait and see what she does when you contact her in a friendly way. Pay attention to your own satisfaction level. If you get more answers from her which aren't agreeable with you, then it is time to put the hope for this relationship behind you.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "Then you'll have clear space to find someone who is as interested in you as you are in them!"
+        },
+        {
+          "response_id": "B",
+          "text": "It seems like her “need space” meant she wanted to keep options open, while you are stuck hoping her words match her actions."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds really painful and confusing, missing her while she moved on so fast, yet still tells you she likes you."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_62",
+      "source_dialog_id": "RED | 222721 - depression",
+      "source_row_index": "3489",
+      "turn": "4",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  Both of us have always been a bit depressed or maybe you could say functionally depressed. He doesnt enjoy anything anymore. He works from home so he's home alone all day. Just waiting for me to get home from work. He's asked for help. \n\n Therapist:  You should see about getting him to a doctor or psychiatrist, as they can prescribe medication that might help. The hardest part is taking the first step. You could also consider therapy. Maybe it would be easier for him to take these steps if you went to the appointments with him? Hope things get better <3 \n\n Client:  Ty for the reply. So I would just look up therapists/psychiatrists or doctors in our area? Should he first go to like a general doctor or shoot right for a therapist? \n\n Therapist:  From what I understand the most effective treatment is therapy combined with medication.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "General doctors can prescribe medication but psychiatrist may be better able to diagnose the condition and select the right medication based off of that since they're a little more specialized in terms of being able to analyze symptoms."
+        },
+        {
+          "response_id": "B",
+          "text": "You’re trying to turn his request for help into a concrete first step, but you also want to choose the path that costs him the least energy and gets results sooner. A primary care doctor can be the easiest entry point for an evaluation and referrals, while you can also book a therapist directly if that feels more doable."
+        },
+        {
+          "response_id": "C",
+          "text": "It makes so much sense that you are feeling unsure about where to start, especially when you care about him and can see how stuck and joyless his days feel. I also hear how meaningful it is that he is asking for help, and that you are right there with him."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_63",
+      "source_dialog_id": "counsel_chat | 761",
+      "source_row_index": "7269",
+      "turn": "2",
+      "final_agreed_label": "Give Information",
+      "context": "Client:  On the first day of school I wore a bra that was too big so that it would look like I had bigger boobs. I did that the whole school year and my parents never found out. But now I can never hang out with my friends at my house or invite them over because it would be around my parents and my friends would see there is nothing there on my chest. How do I fix this? \n\n Therapist:  I get how you feel; you wish your body looked different and you're embarrassed that you tried to make it look different and people may notice. You don't say how old you are. It's likely that, if you are young, your body will change as you mature, but in general, we're given the bodies we're given and I'm glad to see that there may be a desire in you to accept your body the way it is. You seem to want to stop disguising it. Bodies come in all shapes and sizes and every woman knows how it feels to struggle with accepting what her's looks like. Many men go through this as well, although women are more often targeted with cultural messages about how we're supposed to look. Young people often believe that others are noticing and judging them.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "In fact, other people are far more preoccupied with who might be judging them than whatever's going on with you."
+        },
+        {
+          "response_id": "B",
+          "text": "It sounds like the padding was a way to avoid being judged at school, but now it’s trapping you socially because you can’t control who notices."
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds so stressful and lonely, like you are constantly guarding a secret and fearing being exposed and judged. I am really sorry."
+        }
+      ],
+      "ground_truth_labels": {
+        "A": "HUMAN",
+        "B": "LLM_COGNITIVE",
+        "C": "LLM_AFFECTIVE"
+      }
+    },
+    {
+      "scenario_id": "SCENARIO_64",
+      "source_dialog_id": "counsel_chat | 517",
+      "source_row_index": "4808",
+      "turn": "2",
+      "final_agreed_label": "Advise with Permission",
+      "context": "Client:  I am on the track and softball team. My school is small, so I play all four sports it offers. I feel obligated to do track because I'm not a horrible runner, and my dad wants me to. The catch is is that the days before a track meet and the morning of, I get sick and cry. \n\n Therapist:  It sounds like you are no longer committed to track emotionally. It can be hard to talk to your dad about this, but he may think you love track and may not know you are getting so upset the days of meets. An idea would be to first write a letter to your dad to see what feelings come out and then preparing to speak with him.",
+      "responses": [
+        {
+          "response_id": "A",
+          "text": "I think he will appreciate your honesty and maybe this conversation will bring you relief and also time to find something you really will enjoy."
+        },
+        {
+          "response_id": "B",
+          "text": "Meet days seem like a collision between duty to your dad and team and your own wellbeing, so would trying fewer events or a short break help you gauge what truly fits?"
+        },
+        {
+          "response_id": "C",
+          "text": "That sounds like a lot to hold, wanting to meet your dad’s hopes while your body gets sick and you end up in tears, and I hear how overwhelming and painful this is."
         }
       ],
       "ground_truth_labels": {
