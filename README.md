@@ -113,8 +113,6 @@ flowchart TD
    - Correlation analysis (Pearson r)
    - Identify scenarios with largest disagreements
 
-**⚠️ Note**: Render free tier has cold starts (~30 seconds first load after 15min idle)
-
 ---
 
 ## Project Structure
@@ -510,7 +508,6 @@ The live deployment uses a two-service architecture:
 | **ModuleNotFoundError: flask** | Run `poetry install` or `pip install -r requirements.txt` |
 | **poetry: command not found** | Install Poetry: `curl -sSL https://install.python-poetry.org \| python3 -` |
 | **CSV garbled in Excel** | Use Data → From Text/CSV with UTF-8, or open in Google Sheets |
-| **Render 30s delay on first load** | Expected on free tier; wait for "Waking up..." banner to disappear |
 | **Database connection errors** | Verify `DATABASE_URL` format and network access; append `?sslmode=require` for hosted DBs |
 | **Admin upload fails** | Check `ADMIN_SECRET` matches server environment; ensure JSON is valid scenarios format |
 | **LLM generation errors** | Verify `OPENAI_API_KEY` is valid and has sufficient credits; check API rate limits |
