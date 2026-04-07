@@ -4,8 +4,8 @@
 
 This codebase supports a **McMaster University Directed Readings** research study investigating whether automated BWS annotation can effectively assess cognitive and affective empathy in therapeutic responses, and whether BWS reduces bias where LLMs over-index on explicit emotional language versus implicit understanding. The platform enables reproducible collection of human BWS annotations, parallel LLM-as-a-judge evaluation, and comprehensive comparison analysis.
 
-**🌐 Live Deployment**: [cogniaffect.onrender.com](https://cogniaffect.onrender.com/)  
-**📊 Admin Dashboard**: [cogniaffect.onrender.com/admin](https://cogniaffect.onrender.com/admin)
+**Live Deployment**: [cogniaffect.onrender.com](https://cogniaffect.onrender.com/)  
+**Admin Dashboard**: [cogniaffect.onrender.com/admin](https://cogniaffect.onrender.com/admin)
 
 ---
 
@@ -118,18 +118,18 @@ flowchart TD
 ## Project Structure
 
 ```
-📁 Directed Readings BWS Annotation/
-├── 🐍 server.py                    # Flask backend — APIs, database, admin dashboard
-├── 📊 pyproject.toml               # Poetry dependencies (Flask, OpenAI, PostgreSQL)
-├── 📋 requirements.txt             # Pip fallback dependency list
-├── 🤖 prompts.py                   # LLM prompt templates (cognitive vs affective)
-├── 🔄 migrate_sqlite_to_postgres.py # Legacy DB migration script
-├── 📄 pdf_cleaner.py               # Unstructured PDF text extraction utility
+Directed Readings BWS Annotation/
+├── server.py                    # Flask backend — APIs, database, admin dashboard
+├── pyproject.toml               # Poetry dependencies (Flask, OpenAI, PostgreSQL)
+├── requirements.txt             # Pip fallback dependency list
+├── prompts.py                   # LLM prompt templates (cognitive vs affective)
+├── migrate_sqlite_to_postgres.py # Legacy DB migration script
+├── pdf_cleaner.py               # Unstructured PDF text extraction utility
 │
-├── 📈 Power Analysis/
+├── Power Analysis/
 │   └── power.py                    # Statistical power analysis (64 transcripts needed)
 │
-├── 🗃️ dataset_generation/          # Data pipeline from CSV to scenarios JSON
+├── dataset_generation/          # Data pipeline from CSV to scenarios JSON
 │   ├── README.md                   # Full pipeline documentation
 │   ├── text_sanitize.py            # Unicode/HTML/mojibake cleanup
 │   ├── build_transcript_set.py     # Sample & filter to 64 conversations
@@ -142,18 +142,18 @@ flowchart TD
 │       ├── scenarios_transcript_set.json # App-ready format
 │       └── scenarios_transcript_set_with_llm.json # After LLM generation
 │
-├── ⚖️ LLM-as-a-judge/              # Parallel machine annotation
+├── LLM-as-a-judge/              # Parallel machine annotation
 │   ├── README.md                   # Judge script documentation & prompt design
 │   ├── judge.py                    # OpenAI BWS annotation script
 │   └── output/                     # Timestamped CSV exports
 │       └── llm_judge_*.csv         # Results by model (GPT-4, GPT-5, etc.)
 │
-├── 📚 scenario_datasets/           # Archived model-generated bundles
+├── scenario_datasets/           # Archived model-generated bundles
 │   ├── gp5-generated-responses.json
 │   ├── gpt-4o.json
 │   └── gpt-5-mini.json
 │
-├── 🌐 frontend/                    # React + Vite SPA
+├── frontend/                    # React + Vite SPA
 │   ├── src/
 │   │   ├── views/                  # WelcomeScreen, AnnotationView, CompletionScreen
 │   │   ├── components/             # UI primitives, layout components
@@ -164,16 +164,16 @@ flowchart TD
 │   ├── package.json               # React 19, Vite 8, Tailwind
 │   └── vite.config.js             # Build → ../dist/, dev proxy to Flask
 │
-├── 📦 dist/                       # Vite production build (served by Flask)
+├── dist/                       # Vite production build (served by Flask)
 │   ├── index.html
 │   └── assets/
 │
-├── 📊 annotations.db              # SQLite (legacy, gitignored)
-├── 🔧 generate-BWS-tuples.pl      # Kiritchenko & Mohammad reference (Perl)
-├── 🔧 get-scores-from-BWS-annotations-counting.pl # BWS scoring (Perl)
-├── 📋 main_scenarios.json         # Active scenario set
-├── 📋 scenarios*.json             # Scenario variants
-└── 📄 sample_output.csv           # Example export format
+├── annotations.db              # SQLite (legacy, gitignored)
+├── generate-BWS-tuples.pl      # Kiritchenko & Mohammad reference (Perl)
+├── get-scores-from-BWS-annotations-counting.pl # BWS scoring (Perl)
+├── main_scenarios.json         # Active scenario set
+├── scenarios*.json             # Scenario variants
+└── sample_output.csv           # Example export format
 ```
 
 ### Key Files Explained
@@ -324,7 +324,7 @@ Use exported CSVs with your preferred analysis tools (R, Python pandas) to perfo
 6. **Navigate**: Use sidebar to jump between scenarios, track progress
 7. **Auto-save**: Annotations sync every 30 seconds; resume with same ID
 
-**Session Status**: Header shows sync status (Server synced ✅, Syncing..., Local only ⚠️)
+**Session Status**: Header shows sync status (Server synced, Syncing..., Local only)
 
 ---
 
@@ -332,7 +332,7 @@ Use exported CSVs with your preferred analysis tools (R, Python pandas) to perfo
 
 ### Human Annotations Management
 
-1. **Upload scenarios**: Replace active scenario set (⚠️ deletes all existing annotations)
+1. **Upload scenarios**: Replace active scenario set (deletes all existing annotations)
 2. **Monitor progress**: View annotator completion statistics in real-time
 3. **Export data**: Download CSV files (all annotators or individual)
 4. **Analyze scores**: View BWS scores with interactive visualizations
@@ -387,7 +387,7 @@ Copy `.env.example` to `.env` and fill in your values. Never commit `.env` to ve
 | `/api/status` | GET | Database summary |
 | **Admin (requires ADMIN_SECRET)** |
 | `/api/admin/scenarios` | GET | Scenario set metadata |
-| `/api/admin/scenarios` | POST | Upload new scenario set (⚠️ deletes all data) |
+| `/api/admin/scenarios` | POST | Upload new scenario set (deletes all existing data) |
 | **LLM-as-a-Judge** |
 | `/api/llm-judge/models` | GET | List uploaded judge models |
 | `/api/llm-judge/upload` | POST | Upload LLM judge CSV |
